@@ -8,7 +8,7 @@ namespace NJBudgetBackEnd.Models
     public class Group
     {
         public Guid Id { get; set; }
-        public Appartenance Aappartenance { get; set; }
+        public Appartenance Appartenance { get; set; }
         
         public String Caption { get; set; }
     }

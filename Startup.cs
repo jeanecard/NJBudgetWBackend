@@ -4,6 +4,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using NJBudgetWBackend.Business;
+using NJBudgetWBackend.Business.Interface;
+using NJBudgetWBackend.Repositories;
+using NJBudgetWBackend.Repositories.Interface;
+using NJBudgetWBackend.Services;
+using NJBudgetWBackend.Services.Interface;
+using NJBudgetWBackend.Services.Interface.Interface;
 
 namespace NJBudgetWBackend
 {
@@ -28,7 +35,7 @@ namespace NJBudgetWBackend
                                                           "http://*")
                                                     .AllowAnyOrigin()
                                                     .AllowAnyHeader()
-                                                    .AllowAnyMethod(); 
+                                                    .AllowAnyMethod();
                                   });
             });
             services.AddControllers();
@@ -36,6 +43,13 @@ namespace NJBudgetWBackend
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "NJBudgetWBackend", Version = "v1" });
             });
+            services.AddTransient<IGroupService, GroupService>();
+            services.AddTransient<IGroupRepository, GroupRepository>();
+            services.AddTransient<IAppartenanceService, AppartenanceService>();
+            services.AddTransient<IOperationsRepository, OperationsRepository>();
+            services.AddTransient<IBudgetProcessor, BudgetProcessor>();
+            services.AddTransient<IOperationService, OperationService>();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -54,13 +68,13 @@ namespace NJBudgetWBackend
             app.UseCors(x => x
             .AllowAnyMethod()
             .AllowAnyHeader()
-            .SetIsOriginAllowed(origin => 
+            .SetIsOriginAllowed(origin =>
                 origin.Contains("http://localhost") ||
                 origin.Contains("https://njbudgetw.azurewebsites.net/")
-                ) 
+                )
             );
             app.UseAuthorization();
-
+            app.UseDeveloperExceptionPage();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

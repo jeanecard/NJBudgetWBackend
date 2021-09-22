@@ -8,8 +8,9 @@ namespace NJBudgetBackEnd.Models
     public enum CompteStatusEnum
     {
         Good = 1,
-        Warnning = 2,
+        Warning = 2,
         Danger = 3,
-        Shame = 4
+        Shame = 4,
+        None = 5
     }
 }

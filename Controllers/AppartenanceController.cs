@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using NJBudgetBackEnd.Models;
 using NJBudgetWBackend.Commun;
+using NJBudgetWBackend.Services.Interface;
+using NJBudgetWBackend.Services.Interface.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,16 +17,30 @@ namespace NJBudgetWBackend.Controllers
     [ApiController]
     public class AppartenanceController : ControllerBase
     {
+        private IAppartenanceService _apService = null;
+        private AppartenanceController()
+        {
+
+        }
+
+        public AppartenanceController(IAppartenanceService ser)
+        {
+            _apService = ser;
+        }
         // GET: api/<AppartenanceController>
         [HttpGet]
-        public IEnumerable<Appartenance> Get()
+        public async Task<IEnumerable<Appartenance>> GetAsync()
         {
-            return new List<Appartenance> {
-                new Appartenance(){ Id = Guid.Parse(Constant.APPARTENANCE_COMMUN_GUID), Caption = Constant.APPARTENANCE_COMMUN_CAPTION},
-                new Appartenance(){ Id = Guid.Parse(Constant.APPARTENANCE_JEAN_GUID), Caption = Constant.APPARTENANCE_JEAN_CAPTION},
-                new Appartenance(){ Id = Guid.Parse(Constant.APPARTENANCE_NADEGE_GUID), Caption = Constant.APPARTENANCE_NADEGE_CAPTION},
-                new Appartenance(){ Id = Guid.Parse(Constant.APPARTENANCE_THOMAS_GUID), Caption = Constant.APPARTENANCE_THOMAS_CAPTION},
-            };
+            using var appartenanceTask = _apService.GetAsync();
+            await appartenanceTask;
+            if(appartenanceTask.IsCompletedSuccessfully)
+            {
+                return appartenanceTask.Result;
+            }
+            else
+            {
+                throw new Exception("Excuses acceptées commandeur ..");
+            }
         }
     }
 }

@@ -12,6 +12,8 @@ namespace NJBudgetBackEnd.Models
         public DateTime DateOperation { get; set; }
         public float Value { get; set; }
         public string Caption { get; set; }
+        public String User { get; set; }
+
     }
 }
 
