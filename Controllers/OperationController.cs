@@ -13,6 +13,15 @@ namespace NJBudgetWBackend.Controllers
     public class OperationController : ControllerBase
     {
         private IOperationService _opeService = null;
+
+        private OperationController()
+        {
+
+        }
+        public OperationController(IOperationService service)
+        {
+            _opeService = service;
+        }
         // POST api/<OperationController>
         [HttpPost("add-operation")]
         public async Task Add([FromBody] Operation value)

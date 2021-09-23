@@ -17,7 +17,7 @@ namespace NJBudgetWBackend.Commun
         public const String APPARTENANCE_NADEGE_CAPTION = "Nadège";
         public const String APPARTENANCE_THOMAS_CAPTION = "Thomas";
 
-        public const String ELEPHANTSQL_CONNEXION_STRING = "Server={0};Database={1};User Id = { 2 }; Password={3};Port={4}";
+        public const String ELEPHANTSQL_CONNEXION_STRING = "Server={0};Database={1};User Id ={2}; Password={3};Port={4}";
 
     }
 }

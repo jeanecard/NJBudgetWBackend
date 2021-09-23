@@ -16,11 +16,14 @@ namespace NJBudgetWBackend.Repositories
             {
                 return String.Empty;
             }
-            return string.Format(Constant.ELEPHANTSQL_CONNEXION_STRING,
+            String retour = String.Empty;
+            retour = String.Format(Constant.ELEPHANTSQL_CONNEXION_STRING,
                                configuration[_SERVER_KEY],
                                configuration[_DATABASE_KEY],
                                configuration[_USER_KEY],
-                               configuration[_PWD_KEY], 5432);
+                               configuration[_PWD_KEY],
+                               "5432");
+            return retour;
         }
     }
 }

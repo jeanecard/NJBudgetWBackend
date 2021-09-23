@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace NJBudgetWBackend.Services.Interface.Interface
 {
-    interface IOperationService
+    public interface IOperationService
     {
         public Task AddAsync(Operation operation);
         public Task RemoveAsync(Operation operation);
