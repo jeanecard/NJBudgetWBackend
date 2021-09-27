@@ -7,7 +7,7 @@ namespace NJBudgetBackEnd.Models
 {
     public class Operation
     {
-        public Guid Id { get; set; }
+        public Guid? Id { get; set; }
         public Guid CompteId { get; set; }
         public DateTime DateOperation { get; set; }
         public float Value { get; set; }

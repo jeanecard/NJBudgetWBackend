@@ -68,10 +68,14 @@ namespace NJBudgetWBackend
             app.UseCors(x => x
             .AllowAnyMethod()
             .AllowAnyHeader()
-            .SetIsOriginAllowed(origin =>
-                origin.Contains("http://localhost") ||
-                origin.Contains("https://njbudgetw.azurewebsites.net/")
-                )
+            .AllowAnyOrigin()
+            //.SetIsOriginAllowed(origin =>
+            //    origin.Contains("https://njbudgetfront.azurewebsites.net") ||
+            //    origin.Contains("http://localhost") ||
+            //    origin.Contains("https://njbudgetw.azurewebsites.net")
+
+
+                //)
             );
             app.UseAuthorization();
             app.UseDeveloperExceptionPage();

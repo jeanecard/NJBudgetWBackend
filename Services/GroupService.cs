@@ -92,14 +92,19 @@ namespace NJBudgetWBackend.Services
             //1- GetGroup Header
             using var compteTask = _groupRepo.GetCompteHeader(idGroup);
             await compteTask;
-            if(compteTask.IsCompletedSuccessfully)
+            if (compteTask.IsCompletedSuccessfully && compteTask.Result != null)
             {
+                var appartenanceTask = _appartenanceService.GetAsync(compteTask.Result.AppartenanceId);
+                await appartenanceTask;
                 GroupRawDB groupRaw = compteTask.Result;
+
+
+
                 retour.Group = null; //TODO
                 retour.OperationAllowed = groupRaw.OperationAllowed;
                 retour.BudgetExpected = groupRaw.BudgetExpected;
                 retour.Group = new Group() { 
-                    Appartenance = new Appartenance() { Id = groupRaw.AppartenanceId, Caption = "TODO"},
+                    Appartenance = new Appartenance() { Id = groupRaw.AppartenanceId, Caption = appartenanceTask.Result.Caption },
                     Caption = groupRaw.Caption,
                     Id = groupRaw.Id
                 };
@@ -130,7 +135,7 @@ namespace NJBudgetWBackend.Services
             }
             else
             {
-                throw new Exception("Chaussettes !");
+                return null; ;
             }
             return retour;
         }
