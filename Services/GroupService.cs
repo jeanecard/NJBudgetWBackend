@@ -1,4 +1,5 @@
 ﻿using NJBudgetBackEnd.Models;
+using NJBudgetWBackend.Business;
 using NJBudgetWBackend.Business.Interface;
 using NJBudgetWBackend.Models;
 using NJBudgetWBackend.Repositories.Interface;
@@ -16,6 +17,7 @@ namespace NJBudgetWBackend.Services
         private IOperationsRepository _opeRepo = null;
         private IAppartenanceService _appartenanceService = null;
         private IBudgetProcessor _budgetProcessor = null;
+        private IStatusProcessor _statusProcessor = null;
         private GroupService()
         {
             //Dummy for DI.
@@ -26,15 +28,17 @@ namespace NJBudgetWBackend.Services
         /// <param name="repo"></param>
         /// <param name="apService"></param>
         public GroupService(
-            IGroupRepository repo, 
+            IGroupRepository repo,
             IAppartenanceService apService,
             IOperationsRepository opRepo,
-            IBudgetProcessor budgetProcessor)
+            IBudgetProcessor budgetProcessor,
+            IStatusProcessor statusProcessor)
         {
             _groupRepo = repo;
             _appartenanceService = apService;
             _opeRepo = opRepo;
             _budgetProcessor = budgetProcessor;
+            _statusProcessor = statusProcessor;
         }
         /// <summary>
         /// 
@@ -43,28 +47,19 @@ namespace NJBudgetWBackend.Services
         /// <returns></returns>
         public async Task<IEnumerable<Group>> GetGroupsAsync(Guid idAppartenance)
         {
-            if(idAppartenance == Guid.Empty)
+            if (idAppartenance == Guid.Empty)
             {
                 return null;
             }
             using var rawGroupsTask = _groupRepo.GetGroupsByAppartenanceAsync(idAppartenance);
             await rawGroupsTask;
             List<Group> retour = new List<Group>();
-            if(rawGroupsTask.IsCompletedSuccessfully)
+            if (rawGroupsTask.IsCompletedSuccessfully)
             {
-                foreach(GroupRawDB iter in rawGroupsTask.Result)
+                foreach (GroupRawDB iter in rawGroupsTask.Result)
                 {
-                    using var apTask = _appartenanceService.GetAsync(iter.AppartenanceId);
-                    await apTask;
-                    if(apTask.IsCompletedSuccessfully)
-                    {
-                        retour.Add(new Group() { Appartenance = apTask.Result, Caption = iter.Caption, Id = iter.Id });
-
-                    }
-                    else
-                    {
-                        throw new Exception("Vous croyez qu'on vit éternellement ?");
-                    }
+                    var ap = _appartenanceService.GetById(iter.AppartenanceId);
+                    retour.Add(new Group() { Appartenance = ap, Caption = iter.Caption, Id = iter.Id });
                 }
             }
             else
@@ -78,9 +73,9 @@ namespace NJBudgetWBackend.Services
         /// </summary>
         /// <param name="idGroup"></param>
         /// <returns></returns>
-        public async Task<Compte> GetCompteAsync(Guid idGroup, byte month , ushort year)
+        public async Task<Compte> GetCompteAsync(Guid idGroup, byte month, ushort year)
         {
-            if(month == 0 || month > 12  || year < 2020)
+            if (month == 0 || month > 12 || year < 2020)
             {
                 return null;
             }
@@ -94,34 +89,36 @@ namespace NJBudgetWBackend.Services
             await compteTask;
             if (compteTask.IsCompletedSuccessfully && compteTask.Result != null)
             {
-                var appartenanceTask = _appartenanceService.GetAsync(compteTask.Result.AppartenanceId);
-                await appartenanceTask;
+                var appartenance = _appartenanceService.GetById(compteTask.Result.AppartenanceId);
                 GroupRawDB groupRaw = compteTask.Result;
-
-
-
                 retour.Group = null; //TODO
                 retour.OperationAllowed = groupRaw.OperationAllowed;
                 retour.BudgetExpected = groupRaw.BudgetExpected;
-                retour.Group = new Group() { 
-                    Appartenance = new Appartenance() { Id = groupRaw.AppartenanceId, Caption = appartenanceTask.Result.Caption },
+                retour.Group = new Group()
+                {
+                    Appartenance = new Appartenance() { Id = groupRaw.AppartenanceId, Caption = appartenance?.Caption },
                     Caption = groupRaw.Caption,
                     Id = groupRaw.Id
                 };
                 //3- GetOperations du mois
                 using var operationsDuMoisTask = _opeRepo.GetOperationsAsync(idGroup, thisMonthStart, thisMonthEnd);
                 await operationsDuMoisTask;
-                if(operationsDuMoisTask.IsCompletedSuccessfully)
+                if (operationsDuMoisTask.IsCompletedSuccessfully)
                 {
-                        retour.Operations = operationsDuMoisTask.Result;
-                        //4- Update budget left and spent for this month
-                        _budgetProcessor.ProcessBudgetSpentAndLeft(retour, retour.Operations, month, year);
+                    retour.Operations = operationsDuMoisTask.Result;
+                    //4- Update budget left and spent for this month
+                    float budgetConsomme = 0, budgetProvisonne = 0, budgetRestant = 0;
+                    _budgetProcessor.ProcessBudgetSpentAndLeft(out budgetConsomme, out budgetProvisonne, out budgetRestant, groupRaw.BudgetExpected, retour.Operations, month, year);
+                    retour.BudgetConsummed = budgetConsomme;
+                    retour.BudgetLeft = budgetRestant;
+                    retour.BudgetProvision = budgetProvisonne;
                     //5- Update state of compte based on this month operations
                     using var operations6DerniersMoisTask = _opeRepo.GetOperationsAsync(idGroup, thisMonthStart.AddMonths(-6), thisMonthEnd);
                     await operations6DerniersMoisTask;
-                    if(operations6DerniersMoisTask.IsCompletedSuccessfully)
+                    if (operations6DerniersMoisTask.IsCompletedSuccessfully)
                     {
-                        _budgetProcessor.ProcessState(retour, operations6DerniersMoisTask.Result);
+                        var state = _statusProcessor.ProcessState(retour.OperationAllowed, retour.BudgetExpected, operations6DerniersMoisTask.Result);
+                        retour.State = state;
                     }
                     else
                     {

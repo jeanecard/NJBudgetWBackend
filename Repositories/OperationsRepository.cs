@@ -1,10 +1,12 @@
 ﻿using Dapper;
 using Microsoft.Extensions.Configuration;
 using NJBudgetBackEnd.Models;
+using NJBudgetWBackend.Models;
 using NJBudgetWBackend.Repositories.Interface;
 using Npgsql;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace NJBudgetWBackend.Repositories
@@ -62,6 +64,49 @@ namespace NJBudgetWBackend.Repositories
                 throw new Exception("Putain de caisse de meeeeeeeerrrrrrrrrrrrrrrrrdddddddddddddddeeeeeeeeeeeeeeee !!!!!!!!!");
             }
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="compteId"></param>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<SyntheseOperationRAwDB>> GetOperationsAsync(DateTime? from, DateTime? to)
+        {
+            if (!from.HasValue)
+            {
+                from = DateTime.MinValue;
+            }
+            if (!to.HasValue)
+            {
+                to = DateTime.MaxValue;
+            }
+            String query = "SELECT \"CompteId\", \"DateOperation\", \"Value\", \"AppartenanceId\", \"OperationAllowed\", \"BudgetExpected\" " +
+                "FROM public.\"OPERATION\"  " +
+                "INNER JOIN public.\"GROUP\" ON public.\"OPERATION\".\"CompteId\" = public.\"GROUP\".\"Id\" " +
+                "WHERE   \"DateOperation\" between :from::date and :to::date";
+            using var connection = new NpgsqlConnection(PGSqlTools.GetCxString(_config));
+            using var operationsTask = connection.QueryAsync<SyntheseOperationRAwDB>(
+                query,
+                new
+                {
+                    from = from,
+                    to = to,
+                });
+            await operationsTask;
+            if (operationsTask.IsCompletedSuccessfully)
+            {
+                return operationsTask.Result;
+            }
+            else
+            {
+                throw new Exception("Oh bravo");
+            }
+        }
+
+  
+
         /// <summary>
         /// 
         /// </summary>
@@ -69,7 +114,7 @@ namespace NJBudgetWBackend.Repositories
         /// <returns></returns>
         public async Task InsertAsync(Operation op)
         {
-            if(op == null)
+            if (op == null)
             {
                 return;
             }
@@ -78,10 +123,10 @@ namespace NJBudgetWBackend.Repositories
 
             using var connection = new NpgsqlConnection(PGSqlTools.GetCxString(_config));
             using var insertTask = connection.ExecuteAsync(
-                query, 
-                new 
-                { 
-                    id = Guid.NewGuid() ,
+                query,
+                new
+                {
+                    id = Guid.NewGuid(),
                     compteId = op.CompteId,
                     dateOperation = op.DateOperation,
                     value = op.Value,
@@ -102,12 +147,39 @@ namespace NJBudgetWBackend.Repositories
             {
                 return;
             }
-            String query = "DELETE FROM public.\"OPERATION\"  WHERE  WHERE  \"CompteId\" = :id::uuid";
+            String query = "DELETE FROM public.\"OPERATION\"  WHERE  \"Id\" = :id::uuid";
             using var connection = new NpgsqlConnection(PGSqlTools.GetCxString(_config));
             using var deleteTask = connection.ExecuteAsync(
                            query,
-                           new {id = idOperation});
+                           new { id = idOperation });
             await deleteTask;
+        }
+
+        public async Task<Guid> GetCompteOperationAsync(Guid operationid)
+        {
+            if (operationid == Guid.Empty)
+            {
+                return Guid.Empty;
+            }
+            String query = "SELECT* FROM public.\"OPERATION\" WHERE  \"Id\" = :id::uuid";
+            using var connection = new NpgsqlConnection(PGSqlTools.GetCxString(_config));
+            using var operationsTask = connection.QueryAsync<Operation>(
+                query,
+                new
+                {
+                    id = operationid.ToString()
+                });
+            await operationsTask;
+            if (operationsTask.IsCompletedSuccessfully)
+            {
+                Operation result = operationsTask.Result.FirstOrDefault();
+                return result != null ? result.CompteId : Guid.Empty;
+            }
+            else
+            {
+                throw new Exception("Putain de caisse de meeeeeeeerrrrrrrrrrrrrrrrrdddddddddddddddeeeeeeeeeeeeeeee !!!!!!!!!");
+            }
+
         }
     }
 }

@@ -37,18 +37,32 @@ namespace NJBudgetWBackend.Services
                 throw new Exception("Pourquoi pas une laisse dans le cul, ça irait plus vite !");
             }
         }
-
-        public async Task DeleteAsync(Guid operationid)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="operationid"></param>
+        /// <returns></returns>
+        public async Task<Guid> DeleteAsync(Guid operationid)
         {
             if (operationid == Guid.Empty)
             {
-                return;
+                return Guid.Empty;
             }
-            using var deleteTask = _opeRepo.DeleteAsync(operationid);
-            await deleteTask;
-            if (!deleteTask.IsCompletedSuccessfully)
+            using Task<Guid> compteTask = _opeRepo.GetCompteOperationAsync(operationid);
+            await compteTask;
+            if(compteTask.IsCompletedSuccessfully)
             {
-                throw new Exception("Il nous faudrait un plus gros bateau");
+                using var deleteTask = _opeRepo.DeleteAsync(operationid);
+                await deleteTask;
+                if (!deleteTask.IsCompletedSuccessfully)
+                {
+                    throw new Exception("Il nous faudrait un plus gros bateau");
+                }
+                return compteTask.Result;
+            }
+            else
+            {
+                throw new Exception("En vrai ?");
             }
         }
         /// <summary>

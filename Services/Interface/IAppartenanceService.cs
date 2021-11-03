@@ -8,7 +8,7 @@ namespace NJBudgetWBackend.Services.Interface.Interface
 {
     public interface IAppartenanceService
     {
-        Task<Appartenance> GetAsync(Guid id);
-        Task<IEnumerable<Appartenance>> GetAsync();
+        Appartenance GetById(Guid id);
+        IEnumerable<Appartenance> Get();
     }
 }

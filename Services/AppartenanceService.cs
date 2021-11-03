@@ -14,9 +14,8 @@ namespace NJBudgetWBackend.Services
         private static Appartenance _nad = new Appartenance() { Id = Guid.Parse(Constant.APPARTENANCE_NADEGE_GUID), Caption = Constant.APPARTENANCE_NADEGE_CAPTION };
         private static Appartenance _thomas = new Appartenance() { Id = Guid.Parse(Constant.APPARTENANCE_THOMAS_GUID), Caption = Constant.APPARTENANCE_THOMAS_CAPTION };
 
-        public async Task<Appartenance> GetAsync(Guid id)
+        public Appartenance GetById(Guid id)
         {
-            await Task.Delay(1);
             if (id == Guid.Empty)
             {
                 return null;
@@ -36,9 +35,8 @@ namespace NJBudgetWBackend.Services
             }
         }
 
-        public async Task<IEnumerable<Appartenance>> GetAsync()
+        public IEnumerable<Appartenance> Get()
         {
-            await Task.Delay(1);
             return new List<Appartenance> {
                 _commun,
                 _jean,

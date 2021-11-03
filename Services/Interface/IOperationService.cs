@@ -10,7 +10,7 @@ namespace NJBudgetWBackend.Services.Interface.Interface
     {
         public Task AddAsync(Operation operation);
         public Task RemoveAsync(Operation operation);
-        public Task DeleteAsync(Guid operationid);
+        public Task<Guid> DeleteAsync(Guid operationid);
 
 
     }

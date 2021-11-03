@@ -1,5 +1,8 @@
 ﻿using NJBudgetBackEnd.Models;
 using NJBudgetWBackend.Business.Interface;
+using NJBudgetWBackend.Models;
+using NJBudgetWBackend.Repositories.Interface;
+using NJBudgetWBackend.Services.Interface.Interface;
 using System;
 using System.Collections.Generic;
 
@@ -8,212 +11,175 @@ namespace NJBudgetWBackend.Business
 {
     public class BudgetProcessor : IBudgetProcessor
     {
+        private IAppartenanceService _apService = null;
+        private IStatusProcessor _statusProcessor = null;
+        private BudgetProcessor()
+        {
+        }
+        public BudgetProcessor(
+            IAppartenanceService apService, 
+            IStatusProcessor sProcessor)
+        {
+            _apService = apService;
+            _statusProcessor = sProcessor;
+        }
         /// <summary>
         /// Calcul le budget consommé, épargné et restant sur le mois month de l'année year.
         /// </summary>
         /// <param name="compte"></param>
         /// <param name="operations"></param>
         /// <param name="month"></param>
-        public void ProcessBudgetSpentAndLeft(Compte compte, IEnumerable<Operation> operations, byte month, ushort year)
+        public void ProcessBudgetSpentAndLeft(
+            out float budgetConsomme,
+            out float budgetProvisonne,
+            out float budgetRestant,
+            in float budgetExpected,
+            IEnumerable<IOperation> operations, 
+            byte month, 
+            ushort year)
         {
-            if (compte == null || month == 0 || month > 12)
+            if (month == 0 || month > 12 || budgetExpected < 0)
             {
                 throw new ArgumentException("Ah ah, ils vous ont refiler toutes leurs merdes");
             }
-            compte.BudgetConsummed = 0;
-            compte.BudgetProvision = 0;
-            compte.BudgetLeft = compte.BudgetExpected;
+            budgetConsomme = 0;
+            budgetProvisonne = 0;
+            budgetRestant = budgetExpected;
             if (operations != null)
             {
-                foreach (Operation iter in operations)
+                foreach (IOperation iter in operations)
                 {
                     if (iter.DateOperation.Month == month && iter.DateOperation.Year == year)
                     {
-                        compte.BudgetConsummed += Math.Abs(iter.Value);
+                        budgetConsomme += Math.Abs(iter.Value);
                         if (iter.Value > 0)
                         {
-                            compte.BudgetProvision += iter.Value;
+                            budgetProvisonne += iter.Value;
                         }
                     }
                 }
-                compte.BudgetLeft = compte.BudgetExpected - compte.BudgetConsummed;
+                budgetRestant = budgetExpected - budgetConsomme;
             }
+        }
+ 
+        public SyntheseDepenseGlobalModel ProcessSyntheseOperations(
+            IEnumerable<SyntheseOperationRAwDB> operations,
+            IEnumerable<GroupRawDB> groups,
+            byte month,
+            ushort year)
+        {
+            if (operations == null || month == 0 || month > 12 || groups == null)
+            {
+                return null;
+            }
+            Dictionary<Guid, (OperationTypeEnum, float)> operationAndBudgetMap = CreateOperationAndBudgetMap(groups);
+            List<SyntheseDepenseGlobalModelItem> retourData = new List<SyntheseDepenseGlobalModelItem>();
+            Dictionary<Guid, Dictionary<Guid, List<IOperation>>> operationsByCompteByAppartenance = InitOperationsByCompteByAppartenance(groups);
+            List<CompteStatusEnum> statusesByCategories = new List<CompteStatusEnum>();
+
+            //1- Regroupement des opérations apparteance et par compte
+            foreach (SyntheseOperationRAwDB iter in operations)
+            {
+                //1.1- Récupération ou réation de la liste des opération du compte de l'appartenance
+                List<IOperation> iterOperations = operationsByCompteByAppartenance[iter.AppartenanceId][iter.CompteId];
+                //1.2- Ajout de l'opération.
+                iterOperations.Add(new BasicOperation()
+                {
+                    DateOperation = iter.DateOperation,
+                    Value = iter.Value
+                });
+            }
+            //2- Pour chaque appartenance, calcul du budget alloué et dépensé 
+            // qui correspond a la somme de chacune de ces propriétés sur les comptes de l'appartenance.
+            foreach(Guid iterGuidAppartenance in operationsByCompteByAppartenance.Keys)
+            {
+                SyntheseDepenseGlobalModelItem syntheseAppartenance = new SyntheseDepenseGlobalModelItem();
+                syntheseAppartenance.AppartenanceId = iterGuidAppartenance;
+                syntheseAppartenance.AppartenanceCaption = _apService.GetById(iterGuidAppartenance)?.Caption;
+                syntheseAppartenance.Status = CompteStatusEnum.None;
+                syntheseAppartenance.BudgetPourcentageDepense = 0;
+                syntheseAppartenance.BudgetValueDepense = 0;
+                syntheseAppartenance.BudgetValuePrevu = 0;
+                List<CompteStatusEnum> statuses = new List<CompteStatusEnum>();
+                foreach(Guid groupIterGuid in operationsByCompteByAppartenance[iterGuidAppartenance].Keys)
+                {
+                    float budgetDepense = 0, dummy1 = 0, dummy2 = 0;
+                    ProcessBudgetSpentAndLeft(
+                        out budgetDepense,
+                        out dummy1,
+                        out dummy2,
+                        operationAndBudgetMap[groupIterGuid].Item2,
+                        operationsByCompteByAppartenance[iterGuidAppartenance][groupIterGuid],
+                        month,
+                        year);
+                    syntheseAppartenance.BudgetValueDepense += budgetDepense;
+                    syntheseAppartenance.BudgetValuePrevu += operationAndBudgetMap[groupIterGuid].Item2;
+                    statuses.Add(_statusProcessor.ProcessState(
+                        operationAndBudgetMap[groupIterGuid].Item1, 
+                        operationAndBudgetMap[groupIterGuid].Item2, 
+                        operationsByCompteByAppartenance[iterGuidAppartenance][groupIterGuid])); 
+                }
+                syntheseAppartenance.BudgetPourcentageDepense = syntheseAppartenance.BudgetValuePrevu != 0.0f ? (syntheseAppartenance.BudgetValueDepense * 100.0f) / syntheseAppartenance.BudgetValuePrevu : 0.0f;
+                syntheseAppartenance.Status = _statusProcessor.ProcessGlobal(statuses);
+                statusesByCategories.Add(syntheseAppartenance.Status);
+                retourData.Add(syntheseAppartenance);
+            }
+            return new SyntheseDepenseGlobalModel()
+            {
+                Data = retourData,
+                Status = _statusProcessor.ProcessGlobalByCategories(retourData)
+            };
         }
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="compte"></param>
-        /// <param name="operations"></param>
-        public void ProcessState(Compte compte, IEnumerable<Operation> operations)
+        /// <param name="groups"></param>
+        /// <returns></returns>
+        private Dictionary<Guid, Dictionary<Guid, List<IOperation>>> InitOperationsByCompteByAppartenance(IEnumerable<GroupRawDB> groups)
         {
-            if (compte == null || operations == null)
+            Dictionary<Guid, Dictionary<Guid, List<IOperation>>> retour = new Dictionary<Guid, Dictionary<Guid, List<IOperation>>>();
+            if (groups != null)
             {
-                throw new ArgumentNullException("Ah mais je connais Miwege !");
-            }
-            float epargne = 0;
-            float depense = 0;
-            Dictionary<(int, int), int> monthOperations = new Dictionary<(int,int), int>();
-            foreach (Operation iter in operations)
-            {
-                if(!monthOperations.ContainsKey((iter.DateOperation.Year,iter.DateOperation.Month)))
+                foreach (GroupRawDB iter in groups)
                 {
-                    monthOperations.Add((iter.DateOperation.Year, iter.DateOperation.Month), 2);
-                }
-                if (iter.Value < 0)
-                {
-                    depense += iter.Value;
-                }
-                else
-                {
-                    epargne += iter.Value;
-                }
-            }
-            int jourDuMois = DateTime.Now.Day;
-            switch (compte.OperationAllowed)
-            {
-                case OperationTypeEnum.AddOnly:
-                    ProcessStateAddOnly(compte, epargne, monthOperations.Count);
-                    break;
-                case OperationTypeEnum.DeleteOnly:
-                    ProcessStateDeleteOnly(compte, depense, monthOperations.Count, (byte)jourDuMois);
-                    break;
-                case OperationTypeEnum.AddAndDelete:
-                    ProcessStateAddAndDelete(compte, depense, epargne, monthOperations.Count);
-                    break;
-                case OperationTypeEnum.None:
-                    ProcessStateNone(compte);
-                    break;
-                default:
-                    break;
-            }
-           
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="compte"></param>
-        public void ProcessStateNone(Compte compte)
-        {
-            if(compte == null)
-            {
-                return;
-            }
-            compte.State = CompteStatusEnum.None;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="compte"></param>
-        /// <param name="depense"></param>
-        /// <param name="epargne"></param>
-        /// <param name="count"></param>
-        public void ProcessStateAddAndDelete(Compte compte, float depense, float provision, int nbMonth)
-        {
-            if(compte == null)
-            {
-                return;
-            }
-            float fullBudgetExpected = (nbMonth * compte.BudgetExpected);
-            float delta = fullBudgetExpected - Math.Abs(depense) - Math.Abs(provision);
-            var absDelta = Math.Abs(delta);
-            if (delta >= 0)
-            {
-                if(provision <= depense)
-                {
-                    compte.State = CompteStatusEnum.Warning;
-                }
-                else
-                {
-                    if(provision >= 0.75 * fullBudgetExpected)
+                    if (!retour.ContainsKey(iter.AppartenanceId))
                     {
-                        compte.State = CompteStatusEnum.Good;
-                    }
-                    else if(provision >= 0.25 * fullBudgetExpected)
-                    {
-                        compte.State = CompteStatusEnum.Warning;
+                        var iterOperations = new List<IOperation>();
+                        var dic = new Dictionary<Guid, List<IOperation>>();
+                        dic.Add(iter.Id, iterOperations);
+                        retour.Add(iter.AppartenanceId, dic);
                     }
                     else
                     {
-                        compte.State = CompteStatusEnum.Danger;
+                        if (!retour[iter.AppartenanceId].ContainsKey(iter.Id))
+                        {
+                            var iterOperations = new List<IOperation>();
+                            retour[iter.AppartenanceId].Add(iter.Id, iterOperations);
+                        }
                     }
                 }
             }
-            else
-            {
-                if (provision >= depense)
-                {
-                    if (absDelta <= 0.25 * fullBudgetExpected)
-                    {
-                        compte.State = CompteStatusEnum.Warning;
-                    }
-                    else
-                    {
-                        compte.State = CompteStatusEnum.Danger;
-                    }
-                }
-                else
-                {
-                    if (absDelta <= 0.10 * fullBudgetExpected)
-                    {
-                        compte.State = CompteStatusEnum.Warning;
-                    }
-                    else
-                    {
-                        compte.State = CompteStatusEnum.Danger;
-                    }
-                }
-            }
+            return retour;
         }
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="compte"></param>
-        /// <param name="depense"></param>
-        /// <param name="nbMonth"></param>
-        public void ProcessStateDeleteOnly(Compte compte, float depense, int nbMonth, byte jourDuMois)
+        /// <param name="groups"></param>
+        /// <returns></returns>
+        private Dictionary<Guid, (OperationTypeEnum, float)> CreateOperationAndBudgetMap(IEnumerable<GroupRawDB> groups)
         {
-            if(compte == null)
+            Dictionary<Guid, (OperationTypeEnum, float)> retour = new Dictionary<Guid, (OperationTypeEnum, float)>();
+            if(groups != null)
             {
-                return;
-            }
-            float delta = (nbMonth * compte.BudgetExpected) - Math.Abs(depense);
-            var absDelta = Math.Abs(delta);
-            if (delta >= 0)
-            {
-                compte.State = CompteStatusEnum.Good;
-            }
-            else if (absDelta <= compte.BudgetExpected)
-            {
-
-                if (absDelta <= 0.15 * compte.BudgetExpected)
+                foreach(GroupRawDB iter in groups)
                 {
-                    compte.State = CompteStatusEnum.Good;
-                }
-                else if (absDelta <= 0.5 * compte.BudgetExpected)
-                {
-                    compte.State = jourDuMois < 15 ? CompteStatusEnum.Good : CompteStatusEnum.Warning;
-                }
-                else
-                {
-                    compte.State = CompteStatusEnum.Warning;
+                    if (!retour.ContainsKey(iter.Id))
+                    {
+                        retour.Add(iter.Id, (iter.OperationAllowed, iter.BudgetExpected));
+                    }
                 }
             }
-            else
-            {
-                compte.State = CompteStatusEnum.Danger;
-            }
+            return retour;
         }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="compte"></param>
-        /// <param name="epargne"></param>
-        /// <param name="count"></param>
-        public void ProcessStateAddOnly(Compte compte, float epargne, int count)
-        {
-            throw new NotImplementedException("Tu ressembles à un Nazgul avec des tongues !");
-        }
-
-
     }
 }

@@ -9,6 +9,8 @@ namespace NJBudgetWBackend.Repositories.Interface
     public interface IGroupRepository
     {
         Task<IEnumerable<GroupRawDB>> GetGroupsByAppartenanceAsync(Guid id);
+        Task<IEnumerable<GroupRawDB>> GetGroupsAsync();
         Task<GroupRawDB> GetCompteHeader(Guid idGroup);
+        
     }
 }

@@ -5,7 +5,19 @@ using System.Threading.Tasks;
 
 namespace NJBudgetBackEnd.Models
 {
-    public class Operation
+    public interface IOperation
+    {
+        public DateTime DateOperation { get; set; }
+        public float Value { get; set; }
+    }
+
+    public class BasicOperation : IOperation
+    {
+        public DateTime DateOperation { get; set; }
+        public float Value { get; set; }
+    }
+
+    public class Operation : IOperation
     {
         public Guid? Id { get; set; }
         public Guid CompteId { get; set; }

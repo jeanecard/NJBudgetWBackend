@@ -1,14 +1,25 @@
 ﻿using NJBudgetBackEnd.Models;
-using System;
+using NJBudgetWBackend.Models;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace NJBudgetWBackend.Business.Interface
 {
     public interface IBudgetProcessor
     {
-        void ProcessBudgetSpentAndLeft(Compte compte, IEnumerable<Operation> operations, byte month, ushort year);
-        void ProcessState(Compte compte, IEnumerable<Operation> operations);
+        void ProcessBudgetSpentAndLeft(
+            out float budgetConsomme,
+            out float budgetProvisonne,
+            out float budgetRestant,
+            in float budgetExpected, 
+            IEnumerable<IOperation> operations, 
+            byte month, 
+            ushort year);
+        
+
+        SyntheseDepenseGlobalModel ProcessSyntheseOperations(
+            IEnumerable<SyntheseOperationRAwDB> operations,
+            IEnumerable<GroupRawDB> comptes,
+            byte month,
+            ushort year);
     }
 }
