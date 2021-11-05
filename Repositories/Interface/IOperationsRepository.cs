@@ -9,7 +9,7 @@ namespace NJBudgetWBackend.Repositories.Interface
 {
     public interface IOperationsRepository
     {
-        Task<IEnumerable<Operation>> GetOperationsAsync(Guid compteId, DateTime? from, DateTime? to);
+        Task<IEnumerable<Operation>> GetOperationsAsync(Guid compteId, DateTime? from, DateTime? to, OperationTypeEnum opeType);
         Task<IEnumerable<SyntheseOperationRAwDB>> GetOperationsAsync(DateTime? from, DateTime? to);
 
         Task InsertAsync(Operation op);

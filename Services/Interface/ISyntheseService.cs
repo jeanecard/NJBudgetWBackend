@@ -8,8 +8,8 @@ namespace NJBudgetWBackend.Services.Interface.Interface
 {
     public interface ISyntheseService
     {
-        Task<SyntheseDepenseGlobalModel> GetSyntheseByAppartenanceAsync(byte month);
-        Task<SyntheseDepenseByAppartenanceModel> GetSyntheseForAppartenanceAsync(Guid appartenanceId, byte month);
-        Task<SyntheseMoisModel> GetSyntheseGlobal(byte month);
+        Task<SyntheseDepenseGlobalModel> GetSyntheseByMonthByAppartenanceAsync(DateTime input);
+        Task<SyntheseDepenseByAppartenanceModel> GetSyntheseByMonthForAppartenanceAsync(Guid appartenanceId, DateTime inputDate);
+        Task<SyntheseMoisModel> GetSyntheseGlobalMonth(DateTime inputDate);
     }
 }

@@ -33,6 +33,8 @@ namespace NJBudgetWBackend.Business
             out float budgetConsomme,
             out float budgetProvisonne,
             out float budgetRestant,
+            out float budgetEpargne,
+            out float depensePure,
             in float budgetExpected,
             IEnumerable<IOperation> operations, 
             byte month, 
@@ -44,6 +46,8 @@ namespace NJBudgetWBackend.Business
             }
             budgetConsomme = 0;
             budgetProvisonne = 0;
+            budgetEpargne = 0;
+            depensePure = 0;
             budgetRestant = budgetExpected;
             if (operations != null)
             {
@@ -54,7 +58,20 @@ namespace NJBudgetWBackend.Business
                         budgetConsomme += Math.Abs(iter.Value);
                         if (iter.Value > 0)
                         {
-                            budgetProvisonne += iter.Value;
+                            if(iter.OperationAllowed == OperationTypeEnum.EpargneAndDepense
+                                || iter.OperationAllowed == OperationTypeEnum.EpargneOnly)
+                            {
+                                budgetEpargne += iter.Value;
+                            }
+                            else if(iter.OperationAllowed == OperationTypeEnum.ProvisionAndDepense
+                                || iter.OperationAllowed == OperationTypeEnum.ProvisionOnly)
+                            {
+                                budgetProvisonne += iter.Value;
+                            }
+                        }
+                        else
+                        {
+                            depensePure -= iter.Value;
                         }
                     }
                 }
@@ -86,7 +103,8 @@ namespace NJBudgetWBackend.Business
                 iterOperations.Add(new BasicOperation()
                 {
                     DateOperation = iter.DateOperation,
-                    Value = iter.Value
+                    Value = iter.Value,
+                    OperationAllowed = iter.OperationAllowed
                 });
             }
             //2- Pour chaque appartenance, calcul du budget alloué et dépensé 
@@ -103,17 +121,22 @@ namespace NJBudgetWBackend.Business
                 List<CompteStatusEnum> statuses = new List<CompteStatusEnum>();
                 foreach(Guid groupIterGuid in operationsByCompteByAppartenance[iterGuidAppartenance].Keys)
                 {
-                    float budgetDepense = 0, dummy1 = 0, dummy2 = 0;
+                    float budgetDepense = 0, budgetProvison = 0, budgetRestant = 0, budgetEpargne = 0, depensePure = 0;
                     ProcessBudgetSpentAndLeft(
                         out budgetDepense,
-                        out dummy1,
-                        out dummy2,
+                        out budgetProvison,
+                        out budgetRestant,
+                        out budgetEpargne,
+                        out depensePure,
                         operationAndBudgetMap[groupIterGuid].Item2,
                         operationsByCompteByAppartenance[iterGuidAppartenance][groupIterGuid],
                         month,
                         year);
                     syntheseAppartenance.BudgetValueDepense += budgetDepense;
                     syntheseAppartenance.BudgetValuePrevu += operationAndBudgetMap[groupIterGuid].Item2;
+                    syntheseAppartenance.DepensePure += depensePure;
+                    syntheseAppartenance.Epargne += budgetEpargne;
+                    syntheseAppartenance.Provision += budgetProvison;
                     statuses.Add(_statusProcessor.ProcessState(
                         operationAndBudgetMap[groupIterGuid].Item1, 
                         operationAndBudgetMap[groupIterGuid].Item2, 
@@ -121,6 +144,7 @@ namespace NJBudgetWBackend.Business
                 }
                 syntheseAppartenance.BudgetPourcentageDepense = syntheseAppartenance.BudgetValuePrevu != 0.0f ? (syntheseAppartenance.BudgetValueDepense * 100.0f) / syntheseAppartenance.BudgetValuePrevu : 0.0f;
                 syntheseAppartenance.Status = _statusProcessor.ProcessGlobal(statuses);
+                syntheseAppartenance.Balance = syntheseAppartenance.BudgetValuePrevu - syntheseAppartenance.DepensePure - syntheseAppartenance.Provision + syntheseAppartenance.Epargne;
                 statusesByCategories.Add(syntheseAppartenance.Status);
                 retourData.Add(syntheseAppartenance);
             }

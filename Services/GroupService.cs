@@ -101,19 +101,32 @@ namespace NJBudgetWBackend.Services
                     Id = groupRaw.Id
                 };
                 //3- GetOperations du mois
-                using var operationsDuMoisTask = _opeRepo.GetOperationsAsync(idGroup, thisMonthStart, thisMonthEnd);
+                using var operationsDuMoisTask = _opeRepo.GetOperationsAsync(idGroup, thisMonthStart, thisMonthEnd, groupRaw.OperationAllowed);
                 await operationsDuMoisTask;
                 if (operationsDuMoisTask.IsCompletedSuccessfully)
                 {
                     retour.Operations = operationsDuMoisTask.Result;
                     //4- Update budget left and spent for this month
-                    float budgetConsomme = 0, budgetProvisonne = 0, budgetRestant = 0;
-                    _budgetProcessor.ProcessBudgetSpentAndLeft(out budgetConsomme, out budgetProvisonne, out budgetRestant, groupRaw.BudgetExpected, retour.Operations, month, year);
+                    float budgetConsomme = 0, budgetProvisonne = 0, budgetRestant = 0, budgetEpargne = 0, depensePure = 0;
+                    _budgetProcessor.ProcessBudgetSpentAndLeft(
+                        out budgetConsomme, 
+                        out budgetProvisonne, 
+                        out budgetRestant,
+                        out budgetEpargne,
+                        out depensePure,
+                        groupRaw.BudgetExpected, 
+                        retour.Operations, 
+                        month, 
+                        year);
                     retour.BudgetConsummed = budgetConsomme;
                     retour.BudgetLeft = budgetRestant;
                     retour.BudgetProvision = budgetProvisonne;
                     //5- Update state of compte based on this month operations
-                    using var operations6DerniersMoisTask = _opeRepo.GetOperationsAsync(idGroup, thisMonthStart.AddMonths(-6), thisMonthEnd);
+                    using var operations6DerniersMoisTask = _opeRepo.GetOperationsAsync(
+                        idGroup, 
+                        thisMonthStart.AddMonths(-6), 
+                        thisMonthEnd,
+                        groupRaw.OperationAllowed);
                     await operations6DerniersMoisTask;
                     if (operations6DerniersMoisTask.IsCompletedSuccessfully)
                     {

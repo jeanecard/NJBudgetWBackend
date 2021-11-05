@@ -12,6 +12,10 @@ namespace NJBudgetWBackend.Models
         public String GroupCaption { get; set; }
 
         public float BudgetValuePrevu { get; set; }
+        public float Epargne { get; set; }
+        public float Provision { get; set; }
+        public float DepensePure { get; set; }
+        public float Balance { get; set; }
 
         public float BudgetValueDepense { get; set; }
         public float BudgetPourcentageDepense { get; set; }

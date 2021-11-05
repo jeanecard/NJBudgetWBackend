@@ -50,7 +50,6 @@ namespace NJBudgetWBackend
             services.AddTransient<IBudgetProcessor, BudgetProcessor>();
             services.AddTransient<IOperationService, OperationService>();
             services.AddTransient<ISyntheseService, SyntheseService>();
-            services.AddTransient<ISyntheseRepository, SyntheseRepository>();
             services.AddTransient<IStatusProcessor, StatusProcessor>();
             services.AddTransient<IAuthZService, AuthZService>();
             services.AddTransient<ICumulativeService, CumulativeService>();

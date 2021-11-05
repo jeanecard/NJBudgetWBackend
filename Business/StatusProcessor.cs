@@ -124,13 +124,15 @@ namespace NJBudgetWBackend.Business
             int jourDuMois = DateTime.Now.Day;
             switch (operationAllowed)
             {
-                case OperationTypeEnum.AddOnly:
+                case OperationTypeEnum.ProvisionOnly:
+                case OperationTypeEnum.EpargneOnly:
                     retour = ProcessStateAddOnly(budgetExpectedByMonth, epargne, monthOperations.Count);
                     break;
-                case OperationTypeEnum.DeleteOnly:
+                case OperationTypeEnum.DepenseOnly:
                     retour = ProcessStateDeleteOnly(budgetExpectedByMonth, depense, monthOperations.Count, (byte)jourDuMois);
                     break;
-                case OperationTypeEnum.AddAndDelete:
+                case OperationTypeEnum.EpargneAndDepense:
+                case OperationTypeEnum.ProvisionAndDepense:
                     retour = ProcessStateAddAndDelete(budgetExpectedByMonth, depense, epargne, monthOperations.Count);
                     break;
                 case OperationTypeEnum.None:

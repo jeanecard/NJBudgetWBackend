@@ -6,15 +6,17 @@ namespace NJBudgetWBackend.Business.Interface
 {
     public interface IBudgetProcessor
     {
+
         void ProcessBudgetSpentAndLeft(
             out float budgetConsomme,
             out float budgetProvisonne,
             out float budgetRestant,
-            in float budgetExpected, 
-            IEnumerable<IOperation> operations, 
-            byte month, 
+            out float budgetEpargne,
+            out float depensePure,
+            in float budgetExpected,
+            IEnumerable<IOperation> operations,
+            byte month,
             ushort year);
-        
 
         SyntheseDepenseGlobalModel ProcessSyntheseOperations(
             IEnumerable<SyntheseOperationRAwDB> operations,

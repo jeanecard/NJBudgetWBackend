@@ -9,12 +9,15 @@ namespace NJBudgetBackEnd.Models
     {
         public DateTime DateOperation { get; set; }
         public float Value { get; set; }
+        public OperationTypeEnum OperationAllowed { get; set; }
     }
 
     public class BasicOperation : IOperation
     {
         public DateTime DateOperation { get; set; }
         public float Value { get; set; }
+        public OperationTypeEnum OperationAllowed { get; set; }
+
     }
 
     public class Operation : IOperation
@@ -25,16 +28,7 @@ namespace NJBudgetBackEnd.Models
         public float Value { get; set; }
         public string Caption { get; set; }
         public String User { get; set; }
-
+        public OperationTypeEnum OperationAllowed { get; set; }
     }
 }
 
-//INSERT INTO public."OPERATION"(
-//    "Id", "CompteId", "DateOperation", "Value", "Caption")
-
-//    VALUES(
-//        '3841747d-8e40-4de8-acd4-4d2b49475c31',
-//        '3841747d-8e40-4de8-acd4-4d2b49475c30',
-//        '10/25/2021',
-//        50,
-//        'test');

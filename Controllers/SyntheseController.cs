@@ -24,11 +24,12 @@ namespace NJBudgetWBackend.Controllers
         }
         //getExpenseGroupByAppartenance
         // GET: api/<SyntheseController>
-        [HttpGet("ByAppartenance")]
-        public async Task<SyntheseDepenseGlobalModel> GetByAppartenanceAsync()
+        [HttpGet("ByAppartenance/{year}/{month}/{day}")]
+        public async Task<SyntheseDepenseGlobalModel> GetByAppartenanceAsync(uint year, byte month, byte day)
         {
-           
-            using var getTask = _synthService.GetSyntheseByAppartenanceAsync((byte)DateTime.Now.Month);
+            var inputDate = new DateTime((int)year, month, day);
+
+            using var getTask = _synthService.GetSyntheseByMonthByAppartenanceAsync(inputDate);
             await getTask;
             if (getTask.IsCompletedSuccessfully)
             {
@@ -42,10 +43,12 @@ namespace NJBudgetWBackend.Controllers
 
         //getExpenseGroupByAppartenance
         // GET: api/<SyntheseController>
-        [HttpGet("ForAppartenance/{appartenanceId}")]
-        public async Task<SyntheseDepenseByAppartenanceModel> GetByGroupAsync(Guid appartenanceId)
+        [HttpGet("ForAppartenance/{appartenanceId}/{year}/{month}/{day}")]
+        public async Task<SyntheseDepenseByAppartenanceModel> GetByGroupAsync(Guid appartenanceId, int year, byte month, byte day)
         {
-            using Task<SyntheseDepenseByAppartenanceModel> getTask = _synthService.GetSyntheseForAppartenanceAsync(appartenanceId, (byte)DateTime.Now.Month);
+            var inputDate = new DateTime((int)year, month, day);
+
+            using Task<SyntheseDepenseByAppartenanceModel> getTask = _synthService.GetSyntheseByMonthForAppartenanceAsync(appartenanceId, inputDate);
             await getTask;
             if (getTask.IsCompletedSuccessfully)
             {
@@ -57,10 +60,12 @@ namespace NJBudgetWBackend.Controllers
             }
         }
 
-        [HttpGet("SyntheseMois")]
-        public async Task<SyntheseMoisModel> GetGlobalAsync()
+        [HttpGet("SyntheseMois/{year}/{month}/{day}")]
+        public async Task<SyntheseMoisModel> GetGlobalAsync(int year, byte month, byte day)
         {
-            using Task<SyntheseMoisModel> getTask = _synthService.GetSyntheseGlobal((byte)DateTime.Now.Month);
+            var inputDate = new DateTime((int)year, month, day);
+
+            using Task<SyntheseMoisModel> getTask = _synthService.GetSyntheseGlobalMonth(inputDate);
             await getTask;
             if (getTask.IsCompletedSuccessfully)
             {
@@ -70,33 +75,6 @@ namespace NJBudgetWBackend.Controllers
             {
                 throw new Exception("Le gras c'est la vie.");
             }
-        }
-
-
-
-        // GET api/<SyntheseController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/<SyntheseController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<SyntheseController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<SyntheseController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
         }
     }
 }

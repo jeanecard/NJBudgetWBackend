@@ -30,7 +30,11 @@ namespace NJBudgetWBackend.Repositories
         /// <param name="from"></param>
         /// <param name="to"></param>
         /// <returns></returns>
-        public async Task<IEnumerable<Operation>> GetOperationsAsync(Guid compteId, DateTime? from, DateTime? to)
+        public async Task<IEnumerable<Operation>> GetOperationsAsync(
+            Guid compteId, 
+            DateTime? from, 
+            DateTime? to, 
+            OperationTypeEnum opeType)
         {
             if (compteId == Guid.Empty)
             {
@@ -58,6 +62,8 @@ namespace NJBudgetWBackend.Repositories
             if (operationsTask.IsCompletedSuccessfully)
             {
                 return operationsTask.Result;
+                //Linq pour mettre à jour un param 
+                //    TODO
             }
             else
             {

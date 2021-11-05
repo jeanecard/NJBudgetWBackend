@@ -7,9 +7,11 @@ namespace NJBudgetBackEnd.Models
 {
     public enum OperationTypeEnum
     {
-        AddOnly = 1,
-        DeleteOnly = 2,
-        AddAndDelete = 3,
-        None = 4
+        ProvisionOnly = 1,
+        DepenseOnly = 2,
+        ProvisionAndDepense = 3,
+        None = 4,
+        EpargneAndDepense = 5,
+        EpargneOnly = 6,
     }
 }
