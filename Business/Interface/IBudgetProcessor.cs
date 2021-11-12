@@ -1,5 +1,6 @@
 ﻿using NJBudgetBackEnd.Models;
 using NJBudgetWBackend.Models;
+using System;
 using System.Collections.Generic;
 
 namespace NJBudgetWBackend.Business.Interface
@@ -23,5 +24,8 @@ namespace NJBudgetWBackend.Business.Interface
             IEnumerable<GroupRawDB> comptes,
             byte month,
             ushort year);
+
+
+
     }
 }

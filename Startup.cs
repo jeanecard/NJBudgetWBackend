@@ -52,8 +52,8 @@ namespace NJBudgetWBackend
             services.AddTransient<ISyntheseService, SyntheseService>();
             services.AddTransient<IStatusProcessor, StatusProcessor>();
             services.AddTransient<IAuthZService, AuthZService>();
-            services.AddTransient<ICumulativeService, CumulativeService>();
             services.AddTransient<IPeriodProcessor, PeriodProcessor>();
+            services.AddTransient<IBalanceProcessor, BalanceProcessor>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -12,6 +12,9 @@ namespace NJBudgetBackEnd.Models
         public float BudgetConsummed { get; set; } //RemoveOperation and AddOperation
         public float BudgetLeft { get; set; } /// Expected - consumed
         public float BudgetProvision { get; set; } //AddOperation
+
+        public float Balance { get; set; }
+
         public IEnumerable<Operation> Operations { get; set; }
         public CompteStatusEnum State { get; set; }
 

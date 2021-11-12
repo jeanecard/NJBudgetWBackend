@@ -13,6 +13,7 @@ namespace NJBudgetWBackend.Business
     {
         private IAppartenanceService _apService = null;
         private IStatusProcessor _statusProcessor = null;
+
         private BudgetProcessor()
         {
         }
@@ -40,7 +41,7 @@ namespace NJBudgetWBackend.Business
             byte month, 
             ushort year)
         {
-            if (month == 0 || month > 12 || budgetExpected < 0)
+            if ( month == 0 || month > 12 || budgetExpected < 0)
             {
                 throw new ArgumentException("Ah ah, ils vous ont refiler toutes leurs merdes");
             }
@@ -49,11 +50,14 @@ namespace NJBudgetWBackend.Business
             budgetEpargne = 0;
             depensePure = 0;
             budgetRestant = budgetExpected;
+            bool isOperationProcessable = false;
             if (operations != null)
             {
                 foreach (IOperation iter in operations)
                 {
-                    if (iter.DateOperation.Month == month && iter.DateOperation.Year == year)
+                    isOperationProcessable = (iter.DateOperation.Month == month && iter.DateOperation.Year == year);
+
+                    if (isOperationProcessable)
                     {
                         budgetConsomme += Math.Abs(iter.Value);
                         if (iter.Value > 0)
@@ -144,7 +148,7 @@ namespace NJBudgetWBackend.Business
                 }
                 syntheseAppartenance.BudgetPourcentageDepense = syntheseAppartenance.BudgetValuePrevu != 0.0f ? (syntheseAppartenance.BudgetValueDepense * 100.0f) / syntheseAppartenance.BudgetValuePrevu : 0.0f;
                 syntheseAppartenance.Status = _statusProcessor.ProcessGlobal(statuses);
-                syntheseAppartenance.Balance = syntheseAppartenance.BudgetValuePrevu - syntheseAppartenance.DepensePure - syntheseAppartenance.Provision + syntheseAppartenance.Epargne;
+                syntheseAppartenance.Balance = syntheseAppartenance.BudgetValuePrevu - syntheseAppartenance.DepensePure - syntheseAppartenance.Provision - syntheseAppartenance.Epargne;
                 statusesByCategories.Add(syntheseAppartenance.Status);
                 retourData.Add(syntheseAppartenance);
             }
@@ -205,5 +209,6 @@ namespace NJBudgetWBackend.Business
             }
             return retour;
         }
+
     }
 }

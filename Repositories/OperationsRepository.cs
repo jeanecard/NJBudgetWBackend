@@ -61,6 +61,11 @@ namespace NJBudgetWBackend.Repositories
             await operationsTask;
             if (operationsTask.IsCompletedSuccessfully)
             {
+                //!linq !!
+                foreach(Operation iterator in operationsTask.Result)
+                {
+                    iterator.OperationAllowed = opeType;
+                }
                 return operationsTask.Result;
                 //Linq pour mettre à jour un param 
                 //    TODO

@@ -131,7 +131,7 @@ namespace NJBudgetWBackend.Services
                                 DepensePure = depensePure,
                                 Epargne = budgetEpargne,
                                 Provision = budgetProvisonne,
-                                Balance = iter.BudgetExpected - depensePure - budgetProvisonne + budgetEpargne
+                                Balance = iter.BudgetExpected - depensePure - budgetProvisonne - budgetEpargne
                         };
                             items.Add(item);
                         }
@@ -171,7 +171,7 @@ namespace NJBudgetWBackend.Services
                     retour.Epargne += iterator.Epargne;
                 }
                 retour.Status = globalTask.Result.Status;
-                retour.Balance = retour.BudgetValuePrevu - retour.DepensePure - retour.Provision + retour.Epargne; 
+                retour.Balance = retour.BudgetValuePrevu - retour.DepensePure - retour.Provision - retour.Epargne; 
             }
             else
             {

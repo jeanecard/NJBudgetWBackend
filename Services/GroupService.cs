@@ -18,6 +18,7 @@ namespace NJBudgetWBackend.Services
         private IAppartenanceService _appartenanceService = null;
         private IBudgetProcessor _budgetProcessor = null;
         private IStatusProcessor _statusProcessor = null;
+        private IBalanceProcessor _balanceProcessor = null;
         private GroupService()
         {
             //Dummy for DI.
@@ -32,13 +33,15 @@ namespace NJBudgetWBackend.Services
             IAppartenanceService apService,
             IOperationsRepository opRepo,
             IBudgetProcessor budgetProcessor,
-            IStatusProcessor statusProcessor)
+            IStatusProcessor statusProcessor,
+            IBalanceProcessor balanceProcessor)
         {
             _groupRepo = repo;
             _appartenanceService = apService;
             _opeRepo = opRepo;
             _budgetProcessor = budgetProcessor;
             _statusProcessor = statusProcessor;
+            _balanceProcessor = balanceProcessor;
         }
         /// <summary>
         /// 
@@ -136,6 +139,26 @@ namespace NJBudgetWBackend.Services
                     else
                     {
                         throw new Exception("La magie c'est pour les femmes");
+                    }
+                    //6- Update provision, Balance, depense pure
+                    using var operations12DerniersMoisTask = _opeRepo.GetOperationsAsync(
+                                            idGroup,
+                                            thisMonthStart.AddMonths(-12),
+                                            thisMonthEnd,
+                                            groupRaw.OperationAllowed);
+                    await operations12DerniersMoisTask;
+                    if (operations12DerniersMoisTask.IsCompletedSuccessfully)
+                    {
+                        float balance = 0;
+                        _balanceProcessor.ProcessBalance(
+                            out balance,
+                            retour.BudgetExpected,
+                            operations12DerniersMoisTask.Result);
+                        retour.Balance = balance;
+                    }
+                    else
+                    {
+                        throw new Exception("Merde, son plan à marché !");
                     }
                 }
                 else
