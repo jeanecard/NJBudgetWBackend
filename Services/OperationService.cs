@@ -11,17 +11,19 @@ namespace NJBudgetWBackend.Services
 {
     public class OperationService : IOperationService
     {
-        private IOperationsRepository _opeRepo = null;
-        private IGroupService _groupService = null;
-        private IBalanceProcessor _balanceBusiness = null;
+        private readonly IOperationsRepository _opeRepo = null;
+        private readonly IGroupService _groupService = null;
         private OperationService()
         {
 
         }
 
-        public OperationService(IOperationsRepository repo)
+        public OperationService(
+            IOperationsRepository repo,
+            IGroupService groupService)
         {
             _opeRepo = repo;
+            _groupService = groupService;
         }
         /// <summary>
         /// 
@@ -30,14 +32,14 @@ namespace NJBudgetWBackend.Services
         /// <returns></returns>
         public async Task AddAsync(Operation operation)
         {
-            if(operation == null)
+            if (operation == null)
             {
                 return;
             }
             operation.Value = Math.Abs(operation.Value);
             using var addTask = _opeRepo.InsertAsync(operation);
             await addTask;
-            if(!addTask.IsCompletedSuccessfully)
+            if (!addTask.IsCompletedSuccessfully)
             {
                 throw new Exception("Pourquoi pas une laisse dans le cul, ça irait plus vite !");
             }
@@ -55,7 +57,7 @@ namespace NJBudgetWBackend.Services
             }
             using Task<Guid> compteTask = _opeRepo.GetCompteOperationAsync(operationid);
             await compteTask;
-            if(compteTask.IsCompletedSuccessfully)
+            if (compteTask.IsCompletedSuccessfully)
             {
                 using var deleteTask = _opeRepo.DeleteAsync(operationid);
                 await deleteTask;
@@ -71,91 +73,87 @@ namespace NJBudgetWBackend.Services
             }
         }
         /// <summary>
-        /// 
+        /// 1- Obtention de l'état du compte
+        /// 2- Si le compte a le budget restant suffisant pour la dépense, on fait l'operation directement.
+        /// 3- Sinon
+        ///     3.1- Si le budget restant est positif, réalisation d'un opération de retrait avec ce reste
+        ///     3.2- Si la balance est positive, 
+        ///         3.2.1- Si la balance est suffisante pour couvrir le RAV, réalisation d'un opération SYSTEM de retrait avec le RAV
+        ///             et mà0 du resteAVerser
+        ///         3.2.2- Sinon réalisation d'un opération SYSTEM de retrait avec la balance et décrementation du RAV
+        /// 4- Si il reste à verser n'est pas nul, on fait une dernière opération pour couvrir la somme due.
+        /// 5- Lancement des serialisation des opérations recueillies précedement.
         /// </summary>
         /// <param name="operation"></param>
-        /// <returns></returns>
-        public async Task<Compte> RemoveAsync(Operation operation)
+        /// <returns>Les opérations ayant servies à décomposer l'opération demandée.</returns>
+        public async Task<IEnumerable<IOperation>> RemoveAsync(Operation operation)
         {
             if (operation == null)
             {
                 return null;
             }
-            //1- Obtention de l'état du compte
+            //1- 
             DateTime now = DateTime.Now;
             using var compteTask = _groupService.GetCompteAsync(operation.CompteId, (byte)now.Month, (ushort)now.Year);
             await compteTask;
-            List<Operation> operations = new List<Operation>();
-            //2- Si le compte est suffisant pour la dépense, on fait l'operation
-            if(compteTask.Result.BudgetLeft > 0 && compteTask.Result.BudgetLeft >= (operation.Value) )
+            List<Operation> operations = new();
+            //2- 
+            if (compteTask.Result.BudgetLeft > 0 && compteTask.Result.BudgetLeft >= Math.Abs(operation.Value))
             {
                 operations.Add(operation);
             }
-            //3- Sinon
+            //3- 
             else
             {
                 float valeurRestantACouvrir = Math.Abs(operation.Value);
-                //3.1- Réalisation d'un opération de retrait avec le reste du mois disponible
+                //3.1- 
                 if (compteTask.Result.BudgetLeft > 0)
                 {
                     valeurRestantACouvrir -= compteTask.Result.BudgetLeft;
-                    var operationDuMoisPossible = new Operation(operation);
+                    Operation operationDuMoisPossible = new (operation);
                     operationDuMoisPossible.Value = -compteTask.Result.BudgetLeft;
                     operations.Add(operationDuMoisPossible);
                 }
-                //3.2- Calcul de la balance pour étudier s'il existe un reste à verser positif possible
-                using var operations12DerniersMoisTask = _opeRepo.GetOperationsAsync(
-                                            operation.CompteId,
-                                            now.AddMonths(-12),
-                                            now,
-                                            compteTask.Result.OperationAllowed);
-                await operations12DerniersMoisTask;
-                if (operations12DerniersMoisTask.IsCompletedSuccessfully)
+                float balance = compteTask.Result.Balance;
+                //3.2-
+                if (balance > 0)
                 {
-                    float balance = 0;
-                    _balanceBusiness.ProcessBalance(out balance, compteTask.Result.BudgetExpected, compteTask.Result.Operations);
-                    //3.1- Si la balance est positive
-                    if(balance > 0)
+                    //3.2.1-
+                    if (balance >= valeurRestantACouvrir)
                     {
-                        if(balance >= valeurRestantACouvrir)
-                        {
-                            valeurRestantACouvrir = 0;
-                            var operationBalanceComplete = new Operation(operation);
-                            operationBalanceComplete.Value = - (balance - valeurRestantACouvrir);
-                            operationBalanceComplete.IsOperationSystem = true; 
-                            operations.Add(operationBalanceComplete);
-                        }
-                        else
-                        {
-                            valeurRestantACouvrir -= balance;
-                            var operationBalancePartielle = new Operation(operation);
-                            operationBalancePartielle.Value = -(balance - valeurRestantACouvrir);
-                            operationBalancePartielle.IsOperationSystem = true;
-                            operations.Add(operationBalancePartielle);
-                        }
+                        Operation operationBalanceComplete = new (operation);
+                        operationBalanceComplete.Value = - Math.Abs(valeurRestantACouvrir);
+                        operationBalanceComplete.IsOperationSystem = true;
+                        operations.Add(operationBalanceComplete);
+                        valeurRestantACouvrir = 0;
                     }
-                    if(valeurRestantACouvrir > 0)
+                    //3.2.2-
+                    else
                     {
-                        var operationRestantACouvrir = new Operation(operation);
-                        operationRestantACouvrir.Value = -valeurRestantACouvrir;
-                        operations.Add(operationRestantACouvrir);
+                        Operation operationBalancePartielle = new (operation);
+                        operationBalancePartielle.Value = -(balance - valeurRestantACouvrir);
+                        operationBalancePartielle.IsOperationSystem = true;
+                        operations.Add(operationBalancePartielle);
+                        valeurRestantACouvrir -= balance;
+
                     }
-                     
                 }
-                else
+                //4-
+                if (valeurRestantACouvrir > 0)
                 {
-                    throw new Exception("Cette fois, ça va être dur de les encercler colonel ..");
+                    Operation operationRestantACouvrir = new (operation);
+                    operationRestantACouvrir.Value = -valeurRestantACouvrir;
+                    operations.Add(operationRestantACouvrir);
+                    valeurRestantACouvrir = 0;
                 }
+
             }
-            //4-
+            //5-
             var removeTask = PureRemoveAsync(operations);
             await removeTask;
-            if(removeTask.IsCompletedSuccessfully)
+            if (removeTask.IsCompletedSuccessfully)
             {
-                //5- On récupère l'état final du compte que l'on retourne.
-                using var compteFinalTask = _groupService.GetCompteAsync(operation.CompteId, (byte)now.Month, (ushort)now.Year);
-                await compteFinalTask;
-                return compteFinalTask.Result;
+                return operations;
             }
             else
             {
@@ -170,11 +168,11 @@ namespace NJBudgetWBackend.Services
         /// <returns></returns>
         private async Task<Operation> PureRemoveAsync(IEnumerable<Operation> inputs)
         {
-            if(inputs != null)
+            if (inputs != null)
             {
-                foreach(Operation iter in inputs)
+                foreach (Operation iter in inputs)
                 {
-                    Operation ope = new Operation(iter);
+                    Operation ope = new (iter);
                     ope.Value = -Math.Abs(iter.Value);
                     using var removeTask = _opeRepo.InsertAsync(ope);
                     await removeTask;

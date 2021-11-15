@@ -13,12 +13,12 @@ namespace NJBudgetWBackend.Services
 {
     public class GroupService : IGroupService
     {
-        private IGroupRepository _groupRepo = null;
-        private IOperationsRepository _opeRepo = null;
-        private IAppartenanceService _appartenanceService = null;
-        private IBudgetProcessor _budgetProcessor = null;
-        private IStatusProcessor _statusProcessor = null;
-        private IBalanceProcessor _balanceProcessor = null;
+        private readonly IGroupRepository _groupRepo = null;
+        private readonly IOperationsRepository _opeRepo = null;
+        private readonly IAppartenanceService _appartenanceService = null;
+        private readonly IBudgetProcessor _budgetProcessor = null;
+        private readonly IStatusProcessor _statusProcessor = null;
+        private readonly IBalanceProcessor _balanceProcessor = null;
         private GroupService()
         {
             //Dummy for DI.
@@ -56,7 +56,7 @@ namespace NJBudgetWBackend.Services
             }
             using var rawGroupsTask = _groupRepo.GetGroupsByAppartenanceAsync(idAppartenance);
             await rawGroupsTask;
-            List<Group> retour = new List<Group>();
+            List<Group> retour = new();
             if (rawGroupsTask.IsCompletedSuccessfully)
             {
                 foreach (GroupRawDB iter in rawGroupsTask.Result)
@@ -83,10 +83,10 @@ namespace NJBudgetWBackend.Services
                 return null;
             }
 
-            DateTime thisMonthStart = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            DateTime thisMonthStart = new (DateTime.Now.Year, DateTime.Now.Month, 1);
             DateTime thisMonthEnd = thisMonthStart.AddMonths(1).AddDays(-1);
 
-            Compte retour = new Compte();
+            Compte retour = new();
             //1- GetGroup Header
             using var compteTask = _groupRepo.GetCompteHeader(idGroup);
             await compteTask;
@@ -110,13 +110,12 @@ namespace NJBudgetWBackend.Services
                 {
                     retour.Operations = operationsDuMoisTask.Result;
                     //4- Update budget left and spent for this month
-                    float budgetConsomme = 0, budgetProvisonne = 0, budgetRestant = 0, budgetEpargne = 0, depensePure = 0;
                     _budgetProcessor.ProcessBudgetSpentAndLeft(
-                        out budgetConsomme, 
-                        out budgetProvisonne, 
-                        out budgetRestant,
-                        out budgetEpargne,
-                        out depensePure,
+                        out float budgetConsomme, 
+                        out float budgetProvisonne, 
+                        out float budgetRestant,
+                        out float budgetEpargne,
+                        out float depensePure,
                         groupRaw.BudgetExpected, 
                         retour.Operations, 
                         month, 
@@ -149,9 +148,8 @@ namespace NJBudgetWBackend.Services
                     await operations12DerniersMoisTask;
                     if (operations12DerniersMoisTask.IsCompletedSuccessfully)
                     {
-                        float balance = 0;
                         _balanceProcessor.ProcessBalance(
-                            out balance,
+                            out float balance,
                             retour.BudgetExpected,
                             operations12DerniersMoisTask.Result);
                         retour.Balance = balance;

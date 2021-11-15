@@ -16,7 +16,7 @@ namespace NJBudgetWBackend.Repositories
             {
                 return String.Empty;
             }
-            String retour = String.Empty;
+            String retour;
             retour = String.Format(Constant.ELEPHANTSQL_CONNEXION_STRING,
                                configuration[_SERVER_KEY],
                                configuration[_DATABASE_KEY],

@@ -13,7 +13,7 @@ namespace NJBudgetWBackend.Repositories
 {
     public class OperationsRepository : IOperationsRepository
     {
-        private IConfiguration _config = null;
+        private readonly IConfiguration _config = null;
         private OperationsRepository()
         {
 
@@ -55,8 +55,8 @@ namespace NJBudgetWBackend.Repositories
                 new
                 {
                     id = compteId.ToString(),
-                    from = from,
-                    to = to
+                    from ,
+                    to
                 });
             await operationsTask;
             if (operationsTask.IsCompletedSuccessfully)
@@ -102,8 +102,8 @@ namespace NJBudgetWBackend.Repositories
                 query,
                 new
                 {
-                    from = from,
-                    to = to,
+                    from,
+                    to,
                 });
             await operationsTask;
             if (operationsTask.IsCompletedSuccessfully)

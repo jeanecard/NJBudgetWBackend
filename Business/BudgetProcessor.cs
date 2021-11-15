@@ -11,14 +11,14 @@ namespace NJBudgetWBackend.Business
 {
     public class BudgetProcessor : IBudgetProcessor
     {
-        private IAppartenanceService _apService = null;
-        private IStatusProcessor _statusProcessor = null;
+        private readonly IAppartenanceService _apService = null;
+        private readonly IStatusProcessor _statusProcessor = null;
 
         private BudgetProcessor()
         {
         }
         public BudgetProcessor(
-            IAppartenanceService apService, 
+            IAppartenanceService apService,
             IStatusProcessor sProcessor)
         {
             _apService = apService;
@@ -37,11 +37,11 @@ namespace NJBudgetWBackend.Business
             out float budgetEpargne,
             out float depensePure,
             in float budgetExpected,
-            IEnumerable<IOperation> operations, 
-            byte month, 
+            IEnumerable<IOperation> operations,
+            byte month,
             ushort year)
         {
-            if ( month == 0 || month > 12 || budgetExpected < 0)
+            if (month == 0 || month > 12 || budgetExpected < 0)
             {
                 throw new ArgumentException("Ah ah, ils vous ont refiler toutes leurs merdes");
             }
@@ -50,12 +50,12 @@ namespace NJBudgetWBackend.Business
             budgetEpargne = 0;
             depensePure = 0;
             budgetRestant = budgetExpected;
-            bool isOperationProcessable = false;
+            bool isOperationProcessable;
             if (operations != null)
             {
                 foreach (IOperation iter in operations)
                 {
-                    isOperationProcessable = 
+                    isOperationProcessable =
                         !iter.IsOperationSystem
                         &&
                         (iter.DateOperation.Month == month && iter.DateOperation.Year == year);
@@ -65,12 +65,12 @@ namespace NJBudgetWBackend.Business
                         budgetConsomme += Math.Abs(iter.Value);
                         if (iter.Value > 0)
                         {
-                            if(iter.OperationAllowed == OperationTypeEnum.EpargneAndDepense
+                            if (iter.OperationAllowed == OperationTypeEnum.EpargneAndDepense
                                 || iter.OperationAllowed == OperationTypeEnum.EpargneOnly)
                             {
                                 budgetEpargne += iter.Value;
                             }
-                            else if(iter.OperationAllowed == OperationTypeEnum.ProvisionAndDepense
+                            else if (iter.OperationAllowed == OperationTypeEnum.ProvisionAndDepense
                                 || iter.OperationAllowed == OperationTypeEnum.ProvisionOnly)
                             {
                                 budgetProvisonne += iter.Value;
@@ -85,7 +85,7 @@ namespace NJBudgetWBackend.Business
                 budgetRestant = budgetExpected - budgetConsomme;
             }
         }
- 
+
         public SyntheseDepenseGlobalModel ProcessSyntheseOperations(
             IEnumerable<SyntheseOperationRAwDB> operations,
             IEnumerable<GroupRawDB> groups,
@@ -97,27 +97,27 @@ namespace NJBudgetWBackend.Business
                 return null;
             }
             Dictionary<Guid, (OperationTypeEnum, float)> operationAndBudgetMap = CreateOperationAndBudgetMap(groups);
-            List<SyntheseDepenseGlobalModelItem> retourData = new List<SyntheseDepenseGlobalModelItem>();
+            List<SyntheseDepenseGlobalModelItem> retourData = new();
             Dictionary<Guid, Dictionary<Guid, List<IOperation>>> operationsByCompteByAppartenance = InitOperationsByCompteByAppartenance(groups);
-            List<CompteStatusEnum> statusesByCategories = new List<CompteStatusEnum>();
+            List<CompteStatusEnum> statusesByCategories = new();
 
             //1- Regroupement des opérations apparteance et par compte
             foreach (SyntheseOperationRAwDB iter in operations)
             {
                 //1.0- Ne prendre en compte que les opérations réelles de l'utilisateur
-                if(!iter.IsOperationSystem)
+                if (!iter.IsOperationSystem)
                 {
 
-                //1.1- Récupération ou création de la liste des opération du compte de l'appartenance
-                List<IOperation> iterOperations = operationsByCompteByAppartenance[iter.AppartenanceId][iter.CompteId];
-                //1.2- Ajout de l'opération.
-                iterOperations.Add(new BasicOperation()
-                {
-                    DateOperation = iter.DateOperation,
-                    Value = iter.Value,
-                    OperationAllowed = iter.OperationAllowed,
-                    IsOperationSystem = iter.IsOperationSystem
-                });
+                    //1.1- Récupération ou création de la liste des opération du compte de l'appartenance
+                    List<IOperation> iterOperations = operationsByCompteByAppartenance[iter.AppartenanceId][iter.CompteId];
+                    //1.2- Ajout de l'opération.
+                    iterOperations.Add(new BasicOperation()
+                    {
+                        DateOperation = iter.DateOperation,
+                        Value = iter.Value,
+                        OperationAllowed = iter.OperationAllowed,
+                        IsOperationSystem = iter.IsOperationSystem
+                    });
                 }
 
             }
@@ -125,23 +125,25 @@ namespace NJBudgetWBackend.Business
             // qui correspond a la somme de chacune de ces propriétés sur les comptes de l'appartenance.
             foreach (Guid iterGuidAppartenance in operationsByCompteByAppartenance.Keys)
             {
-                SyntheseDepenseGlobalModelItem syntheseAppartenance = new SyntheseDepenseGlobalModelItem();
-                syntheseAppartenance.AppartenanceId = iterGuidAppartenance;
-                syntheseAppartenance.AppartenanceCaption = _apService.GetById(iterGuidAppartenance)?.Caption;
-                syntheseAppartenance.Status = CompteStatusEnum.None;
-                syntheseAppartenance.BudgetPourcentageDepense = 0;
-                syntheseAppartenance.BudgetValueDepense = 0;
-                syntheseAppartenance.BudgetValuePrevu = 0;
-                List<CompteStatusEnum> statuses = new List<CompteStatusEnum>();
-                foreach(Guid groupIterGuid in operationsByCompteByAppartenance[iterGuidAppartenance].Keys)
+                SyntheseDepenseGlobalModelItem syntheseAppartenance = new()
                 {
-                    float budgetDepense = 0, budgetProvison = 0, budgetRestant = 0, budgetEpargne = 0, depensePure = 0;
+                    AppartenanceId = iterGuidAppartenance,
+                    AppartenanceCaption = _apService.GetById(iterGuidAppartenance)?.Caption,
+                    Status = CompteStatusEnum.None,
+                    BudgetPourcentageDepense = 0,
+                    BudgetValueDepense = 0,
+                    BudgetValuePrevu = 0
+                };
+                List<CompteStatusEnum> statuses = new ();
+                foreach (Guid groupIterGuid in operationsByCompteByAppartenance[iterGuidAppartenance].Keys)
+                {
+
                     ProcessBudgetSpentAndLeft(
-                        out budgetDepense,
-                        out budgetProvison,
-                        out budgetRestant,
-                        out budgetEpargne,
-                        out depensePure,
+                        out float budgetDepense,
+                        out float budgetProvison,
+                        out float _,
+                        out float budgetEpargne,
+                        out float depensePure,
                         operationAndBudgetMap[groupIterGuid].Item2,
                         operationsByCompteByAppartenance[iterGuidAppartenance][groupIterGuid],
                         month,
@@ -152,9 +154,9 @@ namespace NJBudgetWBackend.Business
                     syntheseAppartenance.Epargne += budgetEpargne;
                     syntheseAppartenance.Provision += budgetProvison;
                     statuses.Add(_statusProcessor.ProcessState(
-                        operationAndBudgetMap[groupIterGuid].Item1, 
-                        operationAndBudgetMap[groupIterGuid].Item2, 
-                        operationsByCompteByAppartenance[iterGuidAppartenance][groupIterGuid])); 
+                        operationAndBudgetMap[groupIterGuid].Item1,
+                        operationAndBudgetMap[groupIterGuid].Item2,
+                        operationsByCompteByAppartenance[iterGuidAppartenance][groupIterGuid]));
                 }
                 syntheseAppartenance.BudgetPourcentageDepense = syntheseAppartenance.BudgetValuePrevu != 0.0f ? (syntheseAppartenance.BudgetValueDepense * 100.0f) / syntheseAppartenance.BudgetValuePrevu : 0.0f;
                 syntheseAppartenance.Status = _statusProcessor.ProcessGlobal(statuses);
@@ -173,9 +175,9 @@ namespace NJBudgetWBackend.Business
         /// </summary>
         /// <param name="groups"></param>
         /// <returns></returns>
-        private Dictionary<Guid, Dictionary<Guid, List<IOperation>>> InitOperationsByCompteByAppartenance(IEnumerable<GroupRawDB> groups)
+        private static  Dictionary<Guid, Dictionary<Guid, List<IOperation>>> InitOperationsByCompteByAppartenance(IEnumerable<GroupRawDB> groups)
         {
-            Dictionary<Guid, Dictionary<Guid, List<IOperation>>> retour = new Dictionary<Guid, Dictionary<Guid, List<IOperation>>>();
+            Dictionary<Guid, Dictionary<Guid, List<IOperation>>> retour = new();
             if (groups != null)
             {
                 foreach (GroupRawDB iter in groups)
@@ -183,7 +185,8 @@ namespace NJBudgetWBackend.Business
                     if (!retour.ContainsKey(iter.AppartenanceId))
                     {
                         var iterOperations = new List<IOperation>();
-                        var dic = new Dictionary<Guid, List<IOperation>>();
+
+                        var dic = new Dictionary<Guid, List<IOperation>>() { };
                         dic.Add(iter.Id, iterOperations);
                         retour.Add(iter.AppartenanceId, dic);
                     }
@@ -204,12 +207,12 @@ namespace NJBudgetWBackend.Business
         /// </summary>
         /// <param name="groups"></param>
         /// <returns></returns>
-        private Dictionary<Guid, (OperationTypeEnum, float)> CreateOperationAndBudgetMap(IEnumerable<GroupRawDB> groups)
+        private static Dictionary<Guid, (OperationTypeEnum, float)> CreateOperationAndBudgetMap(IEnumerable<GroupRawDB> groups)
         {
-            Dictionary<Guid, (OperationTypeEnum, float)> retour = new Dictionary<Guid, (OperationTypeEnum, float)>();
-            if(groups != null)
+            Dictionary<Guid, (OperationTypeEnum, float)> retour = new();
+            if (groups != null)
             {
-                foreach(GroupRawDB iter in groups)
+                foreach (GroupRawDB iter in groups)
                 {
                     if (!retour.ContainsKey(iter.Id))
                     {

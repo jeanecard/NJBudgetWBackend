@@ -12,7 +12,7 @@ namespace NJBudgetWBackend.Controllers
     [ApiController]
     public class SyntheseController : ControllerBase
     {
-        private ISyntheseService _synthService = null;
+        private readonly ISyntheseService _synthService = null;
         private SyntheseController()
         {
             //Dummy for DI.

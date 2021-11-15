@@ -14,9 +14,9 @@ namespace NJBudgetWBackend.Controllers
     [ApiController]
     public class OperationController : ControllerBase
     {
-        private IOperationService _opeService = null;
-        private IGroupService _groupService = null;
-        private IAuthZService _authZService = null;
+        private readonly IOperationService _opeService = null;
+        private readonly IGroupService _groupService = null;
+        private readonly IAuthZService _authZService = null;
 
         private OperationController()
         {
@@ -39,9 +39,8 @@ namespace NJBudgetWBackend.Controllers
             {
                 return null;
             }
-            StringValues values = new StringValues();
 
-            if(!this.Request.Headers.TryGetValue("background-id", out values) 
+            if(!this.Request.Headers.TryGetValue("background-id", out StringValues values) 
                 || !_authZService.IsAuthZ(values.ToString()))
             {
                 HttpContext.Response.StatusCode = 401;
@@ -73,9 +72,8 @@ namespace NJBudgetWBackend.Controllers
                 return null;
             }
 
-            StringValues values = new StringValues();
 
-            if (!this.Request.Headers.TryGetValue("background-id", out values)
+            if (!this.Request.Headers.TryGetValue("background-id", out StringValues values)
                 || !_authZService.IsAuthZ(values.ToString()))
             {
                 HttpContext.Response.StatusCode = 401;
@@ -104,9 +102,7 @@ namespace NJBudgetWBackend.Controllers
             if (idOperation != Guid.Empty)
             {
 
-                StringValues values = new StringValues();
-
-                if (!this.Request.Headers.TryGetValue("background-id", out values)
+                if (!this.Request.Headers.TryGetValue("background-id", out StringValues values)
                     || !_authZService.IsAuthZ(values.ToString()))
                 {
                     HttpContext.Response.StatusCode = 401;

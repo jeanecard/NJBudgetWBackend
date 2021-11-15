@@ -17,7 +17,7 @@ namespace NJBudgetWBackend.Controllers
     [ApiController]
     public class AppartenanceController : ControllerBase
     {
-        private IAppartenanceService _apService = null;
+        private readonly IAppartenanceService _apService = null;
         private AppartenanceController()
         {
 

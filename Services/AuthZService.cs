@@ -9,7 +9,7 @@ namespace NJBudgetWBackend.Services
 {
     public class AuthZService : IAuthZService
     {
-        IConfiguration _configuration = null;
+        private readonly IConfiguration _configuration = null;
 
         private AuthZService()
         {

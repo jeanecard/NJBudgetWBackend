@@ -7,7 +7,7 @@ namespace NJBudgetWBackend.Business
 {
     public class StatusProcessor : IStatusProcessor
     {
-        private readonly Dictionary<CompteStatusEnum, short> values = new Dictionary<CompteStatusEnum, short>();
+        private readonly Dictionary<CompteStatusEnum, short> values = new ();
         public StatusProcessor()
         {
             values.Add(CompteStatusEnum.Danger, -1);
@@ -101,11 +101,11 @@ namespace NJBudgetWBackend.Business
             CompteStatusEnum retour = CompteStatusEnum.None;
             if (operations == null)
             {
-                throw new ArgumentNullException("Ah mais je connais Miwege !");
+                throw new Exception("Ah mais je connais Miwege !");
             }
             float epargne = 0;
             float depense = 0;
-            Dictionary<(int, int), int> monthOperations = new Dictionary<(int, int), int>();
+            Dictionary<(int, int), int> monthOperations = new ();
             foreach (IOperation iter in operations)
             {
                 if (!monthOperations.ContainsKey((iter.DateOperation.Year, iter.DateOperation.Month)))

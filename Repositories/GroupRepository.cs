@@ -14,7 +14,7 @@ namespace NJBudgetWBackend.Repositories
 {
     public class GroupRepository : IGroupRepository
     {
-        private IConfiguration _configuration = null;
+        private readonly IConfiguration _configuration = null;
 
         private GroupRepository()
         {

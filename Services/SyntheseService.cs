@@ -13,11 +13,11 @@ namespace NJBudgetWBackend.Services
 {
     public class SyntheseService : ISyntheseService
     {
-        private IBudgetProcessor _budgetBusiness = null;
-        private IGroupRepository _groupRepo = null;
-        private IOperationsRepository _opeRepo = null;
-        private IAppartenanceService _apService = null;
-        private IStatusProcessor _statusProcessor = null;
+        private readonly IBudgetProcessor _budgetBusiness = null;
+        private readonly IGroupRepository _groupRepo = null;
+        private readonly IOperationsRepository _opeRepo = null;
+        private readonly IAppartenanceService _apService = null;
+        private readonly IStatusProcessor _statusProcessor = null;
         private SyntheseService()
         {
 
@@ -50,7 +50,7 @@ namespace NJBudgetWBackend.Services
             {
                 return null;
             }
-            SyntheseDepenseGlobalModel retour = new SyntheseDepenseGlobalModel();
+            SyntheseDepenseGlobalModel retour = new ();
             using var opeTask = _opeRepo.GetOperationsAsync(days.Value.Item1, date);
             await opeTask;
             if (opeTask.IsCompletedSuccessfully)
@@ -86,7 +86,7 @@ namespace NJBudgetWBackend.Services
             {
                 return null;
             }
-            SyntheseDepenseByAppartenanceModel retour = new SyntheseDepenseByAppartenanceModel();
+            SyntheseDepenseByAppartenanceModel retour = new ();
             retour.AppartenanceId = appartenanceId;
 
             var appartenance = _apService.GetById(appartenanceId);
@@ -97,7 +97,7 @@ namespace NJBudgetWBackend.Services
                 await groupsTask;
                 if (groupsTask.IsCompletedSuccessfully)
                 {
-                    List<SyntheseDepenseByAppartenanceModelItem> items = new List<SyntheseDepenseByAppartenanceModelItem>();
+                    List<SyntheseDepenseByAppartenanceModelItem> items = new ();
                     foreach (GroupRawDB iter in groupsTask.Result)
                     {
                         Task<IEnumerable<Operation>> operationTask = _opeRepo.GetOperationsAsync(
@@ -109,13 +109,12 @@ namespace NJBudgetWBackend.Services
                         if (operationTask.IsCompletedSuccessfully)
                         {
 
-                            float budgetDepense = 0, budgetProvisonne = 0, budgetRestant = 0, budgetEpargne = 0 , depensePure = 0;
                             _budgetBusiness.ProcessBudgetSpentAndLeft(
-                                out budgetDepense,
-                                out budgetProvisonne,
-                                out budgetRestant,
-                                out budgetEpargne,
-                                out depensePure,
+                                out float budgetDepense,
+                                out float budgetProvisonne,
+                                out float budgetRestant,
+                                out float budgetEpargne,
+                                out float depensePure,
                                 iter.BudgetExpected,
                                 operationTask.Result,
                                 (byte)(date.Month),
@@ -156,7 +155,7 @@ namespace NJBudgetWBackend.Services
 
         public async Task<SyntheseMoisModel> GetSyntheseGlobalMonth(DateTime inputDate)
         {
-            SyntheseMoisModel retour = new SyntheseMoisModel();
+            SyntheseMoisModel retour = new ();
 
             var globalTask = GetSyntheseByMonthByAppartenanceAsync(inputDate);
             await globalTask;
