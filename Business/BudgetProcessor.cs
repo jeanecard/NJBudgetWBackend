@@ -55,7 +55,10 @@ namespace NJBudgetWBackend.Business
             {
                 foreach (IOperation iter in operations)
                 {
-                    isOperationProcessable = (iter.DateOperation.Month == month && iter.DateOperation.Year == year);
+                    isOperationProcessable = 
+                        !iter.IsOperationSystem
+                        &&
+                        (iter.DateOperation.Month == month && iter.DateOperation.Year == year);
 
                     if (isOperationProcessable)
                     {
@@ -101,19 +104,26 @@ namespace NJBudgetWBackend.Business
             //1- Regroupement des opérations apparteance et par compte
             foreach (SyntheseOperationRAwDB iter in operations)
             {
-                //1.1- Récupération ou réation de la liste des opération du compte de l'appartenance
+                //1.0- Ne prendre en compte que les opérations réelles de l'utilisateur
+                if(!iter.IsOperationSystem)
+                {
+
+                //1.1- Récupération ou création de la liste des opération du compte de l'appartenance
                 List<IOperation> iterOperations = operationsByCompteByAppartenance[iter.AppartenanceId][iter.CompteId];
                 //1.2- Ajout de l'opération.
                 iterOperations.Add(new BasicOperation()
                 {
                     DateOperation = iter.DateOperation,
                     Value = iter.Value,
-                    OperationAllowed = iter.OperationAllowed
+                    OperationAllowed = iter.OperationAllowed,
+                    IsOperationSystem = iter.IsOperationSystem
                 });
+                }
+
             }
             //2- Pour chaque appartenance, calcul du budget alloué et dépensé 
             // qui correspond a la somme de chacune de ces propriétés sur les comptes de l'appartenance.
-            foreach(Guid iterGuidAppartenance in operationsByCompteByAppartenance.Keys)
+            foreach (Guid iterGuidAppartenance in operationsByCompteByAppartenance.Keys)
             {
                 SyntheseDepenseGlobalModelItem syntheseAppartenance = new SyntheseDepenseGlobalModelItem();
                 syntheseAppartenance.AppartenanceId = iterGuidAppartenance;

@@ -33,7 +33,7 @@ namespace NJBudgetWBackend.Business
             float budgetProvisonneMoisCourant = 0;
 
 
-            DateTime processOnDate = processDateConsideration.HasValue ? processDateConsideration.Value : DateTime.Now;
+            DateTime processOnDate = processDateConsideration ??  DateTime.Now;
             balance = 0;
 
             if (operations != null)

@@ -14,5 +14,7 @@ namespace NJBudgetWBackend.Models
         public Guid AppartenanceId { get; set; }
         public OperationTypeEnum OperationAllowed { get; set; }
         public float BudgetExpected { get; set; }
+        public bool IsOperationSystem { get; set; }
+
     }
 }
