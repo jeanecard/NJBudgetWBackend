@@ -107,14 +107,16 @@ namespace NJBudgetWBackend.Services
             {
                 float valeurRestantACouvrir = Math.Abs(operation.Value);
                 //3.1- 
+                float balance = compteTask.Result.Balance; //bad idea, we need to reprocess balance
                 if (compteTask.Result.BudgetLeft > 0)
                 {
                     valeurRestantACouvrir -= compteTask.Result.BudgetLeft;
                     Operation operationDuMoisPossible = new (operation);
                     operationDuMoisPossible.Value = -compteTask.Result.BudgetLeft;
                     operations.Add(operationDuMoisPossible);
+                    balance -= compteTask.Result.BudgetLeft;//bad idea, we need to reprocess balance .. on refait le boumit du balanceProcessor la c'est pas bon.
                 }
-                float balance = compteTask.Result.Balance;
+
                 //3.2-
                 if (balance > 0)
                 {
@@ -131,7 +133,7 @@ namespace NJBudgetWBackend.Services
                     else
                     {
                         Operation operationBalancePartielle = new (operation);
-                        operationBalancePartielle.Value = -(balance - valeurRestantACouvrir);
+                        operationBalancePartielle.Value = -(balance);
                         operationBalancePartielle.IsOperationSystem = true;
                         operations.Add(operationBalancePartielle);
                         valeurRestantACouvrir -= balance;
