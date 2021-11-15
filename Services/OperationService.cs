@@ -111,7 +111,7 @@ namespace NJBudgetWBackend.Services
                 if (compteTask.Result.BudgetLeft > 0)
                 {
                     valeurRestantACouvrir -= compteTask.Result.BudgetLeft;
-                    Operation operationDuMoisPossible = new (operation);
+                    Operation operationDuMoisPossible = new(operation);
                     operationDuMoisPossible.Value = -compteTask.Result.BudgetLeft;
                     operations.Add(operationDuMoisPossible);
                     balance -= compteTask.Result.BudgetLeft;//bad idea, we need to reprocess balance .. on refait le boumit du balanceProcessor la c'est pas bon.
@@ -123,8 +123,8 @@ namespace NJBudgetWBackend.Services
                     //3.2.1-
                     if (balance >= valeurRestantACouvrir)
                     {
-                        Operation operationBalanceComplete = new (operation);
-                        operationBalanceComplete.Value = - Math.Abs(valeurRestantACouvrir);
+                        Operation operationBalanceComplete = new(operation);
+                        operationBalanceComplete.Value = -Math.Abs(valeurRestantACouvrir);
                         operationBalanceComplete.IsOperationSystem = true;
                         operations.Add(operationBalanceComplete);
                         valeurRestantACouvrir = 0;
@@ -132,7 +132,7 @@ namespace NJBudgetWBackend.Services
                     //3.2.2-
                     else
                     {
-                        Operation operationBalancePartielle = new (operation);
+                        Operation operationBalancePartielle = new(operation);
                         operationBalancePartielle.Value = -(balance);
                         operationBalancePartielle.IsOperationSystem = true;
                         operations.Add(operationBalancePartielle);
@@ -143,7 +143,7 @@ namespace NJBudgetWBackend.Services
                 //4-
                 if (valeurRestantACouvrir > 0)
                 {
-                    Operation operationRestantACouvrir = new (operation);
+                    Operation operationRestantACouvrir = new(operation);
                     operationRestantACouvrir.Value = -valeurRestantACouvrir;
                     operations.Add(operationRestantACouvrir);
                     valeurRestantACouvrir = 0;
@@ -168,7 +168,7 @@ namespace NJBudgetWBackend.Services
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        private async Task<Operation> PureRemoveAsync(IEnumerable<Operation> inputs)
+        private async Task PureRemoveAsync(IEnumerable<Operation> inputs)
         {
             if (inputs != null)
             {
@@ -178,17 +178,12 @@ namespace NJBudgetWBackend.Services
                     ope.Value = -Math.Abs(iter.Value);
                     using var removeTask = _opeRepo.InsertAsync(ope);
                     await removeTask;
-                    if (removeTask.IsCompletedSuccessfully)
-                    {
-                        return ope;
-                    }
-                    else
+                    if (!removeTask.IsCompletedSuccessfully)
                     {
                         throw new Exception("C'est vous le doc, doc !");
                     }
                 }
             }
-            return null;
         }
     }
 }
