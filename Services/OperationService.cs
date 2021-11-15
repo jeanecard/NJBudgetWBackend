@@ -124,6 +124,7 @@ namespace NJBudgetWBackend.Services
                     if (balance >= valeurRestantACouvrir)
                     {
                         Operation operationBalanceComplete = new(operation);
+                        operationBalanceComplete.Caption += " (SYSTEM)";
                         operationBalanceComplete.Value = -Math.Abs(valeurRestantACouvrir);
                         operationBalanceComplete.IsOperationSystem = true;
                         operations.Add(operationBalanceComplete);
@@ -133,6 +134,7 @@ namespace NJBudgetWBackend.Services
                     else
                     {
                         Operation operationBalancePartielle = new(operation);
+                        operationBalancePartielle.Caption += " (SYSTEM)";
                         operationBalancePartielle.Value = -(balance);
                         operationBalancePartielle.IsOperationSystem = true;
                         operations.Add(operationBalancePartielle);
@@ -170,11 +172,13 @@ namespace NJBudgetWBackend.Services
         /// <returns></returns>
         private async Task PureRemoveAsync(IEnumerable<Operation> inputs)
         {
+            Guid transactionID = Guid.NewGuid();
             if (inputs != null)
             {
                 foreach (Operation iter in inputs)
                 {
                     Operation ope = new (iter);
+                    ope.TransactionId = transactionID;
                     ope.Value = -Math.Abs(iter.Value);
                     using var removeTask = _opeRepo.InsertAsync(ope);
                     await removeTask;

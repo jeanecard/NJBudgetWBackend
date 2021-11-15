@@ -15,6 +15,6 @@ namespace NJBudgetWBackend.Models
         public OperationTypeEnum OperationAllowed { get; set; }
         public float BudgetExpected { get; set; }
         public bool IsOperationSystem { get; set; }
-
+        public Guid? TransactionId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     }
 }

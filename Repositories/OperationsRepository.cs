@@ -129,8 +129,8 @@ namespace NJBudgetWBackend.Repositories
             {
                 return;
             }
-            String query = "INSERT INTO public.\"OPERATION\"(\"Id\", \"CompteId\", \"DateOperation\", \"Value\", \"Caption\", \"User\") " +
-                "VALUES(:id, :compteId, :dateOperation, :value, :caption, :user)";
+            String query = "INSERT INTO public.\"OPERATION\"(\"Id\", \"CompteId\", \"DateOperation\", \"Value\", \"Caption\", \"User\", \"IsOperationSystem\", \"TransactionId\") " +
+                "VALUES(:id, :compteId, :dateOperation, :value, :caption, :user, :isSystem, :transactionId)";
 
             using var connection = new NpgsqlConnection(PGSqlTools.GetCxString(_config));
             using var insertTask = connection.ExecuteAsync(
@@ -142,7 +142,9 @@ namespace NJBudgetWBackend.Repositories
                     dateOperation = op.DateOperation,
                     value = op.Value,
                     caption = op.Caption,
-                    user = op.User
+                    user = op.User,
+                    isSystem = op.IsOperationSystem,
+                    transactionId = op.TransactionId
                 });
             await insertTask;
         }

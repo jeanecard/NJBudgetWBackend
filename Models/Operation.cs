@@ -11,6 +11,7 @@ namespace NJBudgetBackEnd.Models
         public float Value { get; set; }
         public OperationTypeEnum OperationAllowed { get; set; }
         public bool IsOperationSystem { get; set; }
+        public Guid? TransactionId { get; set; }
     }
 
     public class BasicOperation : IOperation
@@ -23,6 +24,7 @@ namespace NJBudgetBackEnd.Models
         public float Value { get; set; }
         public OperationTypeEnum OperationAllowed { get; set; }
         public bool IsOperationSystem { get; set; }
+        public Guid? TransactionId { get; set; }
     }
 
     public class Operation : IOperation
@@ -43,6 +45,7 @@ namespace NJBudgetBackEnd.Models
                 User = input.User;
                 OperationAllowed = input.OperationAllowed;
                 IsOperationSystem = input.IsOperationSystem;
+                TransactionId = input.TransactionId;
             }
         }
         public bool IsOperationSystem { get; set; }
@@ -54,6 +57,7 @@ namespace NJBudgetBackEnd.Models
         public string Caption { get; set; }
         public String User { get; set; }
         public OperationTypeEnum OperationAllowed { get; set; }
+        public Guid? TransactionId { get; set; }
     }
 }
 
