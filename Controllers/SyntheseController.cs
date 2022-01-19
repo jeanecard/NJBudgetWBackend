@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using NJBudgetWBackend.Models;
+using NJBudgetWBackend.Services.Interface;
 using NJBudgetWBackend.Services.Interface.Interface;
 using System;
 using System.Threading.Tasks;
@@ -13,14 +15,22 @@ namespace NJBudgetWBackend.Controllers
     public class SyntheseController : ControllerBase
     {
         private readonly ISyntheseService _synthService = null;
+        private readonly IModelJammer _jammer = null;
+        private readonly IAuthZService _authZService = null;
+
         private SyntheseController()
         {
             //Dummy for DI.
         }
 
-        public SyntheseController(ISyntheseService service)
+        public SyntheseController(
+            ISyntheseService service,
+            IModelJammer jammer,
+            IAuthZService authService)
         {
             _synthService = service;
+            _jammer = jammer;
+            _authZService = authService;
         }
         //getExpenseGroupByAppartenance
         // GET: api/<SyntheseController>
@@ -33,7 +43,15 @@ namespace NJBudgetWBackend.Controllers
             await getTask;
             if (getTask.IsCompletedSuccessfully)
             {
-                return getTask.Result;
+                if (!this.Request.Headers.TryGetValue("background-id", out StringValues values)
+           || !_authZService.IsAuthZ(values.ToString()))
+                {
+                    return _jammer.Jam(getTask.Result);
+                }
+                else
+                {
+                    return getTask.Result;
+                }
             }
             else
             {
@@ -52,7 +70,16 @@ namespace NJBudgetWBackend.Controllers
             await getTask;
             if (getTask.IsCompletedSuccessfully)
             {
-                return getTask.Result;
+                if (!this.Request.Headers.TryGetValue("background-id", out StringValues values)
+            || !_authZService.IsAuthZ(values.ToString()))
+                {
+                    return _jammer.Jam(getTask.Result);
+                }
+                else
+                {
+                    return getTask.Result;
+
+                }
             }
             else
             {
@@ -63,13 +90,22 @@ namespace NJBudgetWBackend.Controllers
         [HttpGet("SyntheseMois/{year}/{month}/{day}")]
         public async Task<SyntheseMoisModel> GetGlobalAsync(int year, byte month, byte day)
         {
-            var inputDate = new DateTime((int)year, month, day);
+                var inputDate = new DateTime((int)year, month, day);
 
             using Task<SyntheseMoisModel> getTask = _synthService.GetSyntheseGlobalMonth(inputDate);
             await getTask;
             if (getTask.IsCompletedSuccessfully)
             {
-                return getTask.Result;
+                if (!this.Request.Headers.TryGetValue("background-id", out StringValues values)
+            || !_authZService.IsAuthZ(values.ToString()))
+                {
+                    return _jammer.Jam(getTask.Result);
+                }
+                else
+                {
+                    return getTask.Result;
+
+                }
             }
             else
             {
